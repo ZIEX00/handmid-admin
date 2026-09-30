@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HANDMADE | المنتجات</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .catalog-page { min-height: 100vh; }
+      .catalog-header { padding: 34px clamp(22px, 6vw, 90px) 22px; display: flex; justify-content: space-between; align-items: end; gap: 20px; }
+      .catalog-header h1 { margin: 0 0 8px; font: 600 clamp(30px, 5vw, 52px)/1.1 "Playfair Display", serif; }
+      .catalog-header p { margin: 0; color: var(--muted); line-height: 1.7; }
+      .catalog-back { border-bottom: 1px solid var(--ink); padding-bottom: 5px; font-size: 11px; white-space: nowrap; }
+      .catalog-nav { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 clamp(22px, 6vw, 90px) 22px; }
+      .catalog-nav a { border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; font-size: 11px; }
+      .catalog-nav a.active, .catalog-nav a:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+      .catalog-grid { padding-top: 18px; }
+      .catalog-empty { grid-column: 1 / -1; padding: 70px 20px; text-align: center; color: var(--muted); }
+      @media (max-width: 600px) { .catalog-header { align-items: start; flex-direction: column; } }
+    </style>
+  </head>
+  <body>
+    <div class="announcement">مصنوع يدويًا في مصر <span>•</span> قطع مميزة بكميات محدودة</div>
+    <main class="catalog-page">
+      <header class="catalog-header">
+        <div>
+          <p class="eyebrow">HANDMADE COLLECTION</p>
+          <h1 id="catalog-title">المجموعة</h1>
+          <p id="catalog-description">اكتشف الموديلات المصنوعة بعناية.</p>
+        </div>
+        <a class="catalog-back" href="index.html">العودة للمتجر ←</a>
+      </header>
+      <nav class="catalog-nav" aria-label="تصنيفات المنتجات">
+        <a href="catalog.html?category=Crochet" data-category="Crochet">كروشيه</a>
+        <a href="catalog.html?category=Beadwork" data-category="Beadwork">مشغولات خرز</a>
+        <a href="catalog.html?category=Keychains" data-category="Keychains">ميداليات</a>
+        <a href="custom-orders.html">طلبات خاصة</a>
+      </nav>
+      <section class="section products-section">
+        <div class="shop-controls">
+          <label class="search-box" aria-label="البحث في المنتجات">
+            <span>⌕</span>
+            <input id="catalog-search" type="search" placeholder="ابحث داخل المجموعة" />
+          </label>
+        </div>
+        <div class="product-grid catalog-grid" id="catalog-grid"></div>
+      </section>
+    </main>
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+    <script src="catalog.js"></script>
+  </body>
+</html>

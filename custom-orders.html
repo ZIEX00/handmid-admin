@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HANDMADE | طلب خاص</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .custom-page { min-height: 100vh; padding-bottom: 70px; }
+      .custom-hero { padding: 48px clamp(22px, 8vw, 120px) 30px; display: grid; grid-template-columns: 1fr 0.8fr; gap: 50px; align-items: center; }
+      .custom-hero h1 { margin: 0 0 14px; font: 600 clamp(36px, 5vw, 64px)/1.05 "Playfair Display", serif; }
+      .custom-hero p { color: var(--muted); line-height: 1.9; max-width: 540px; }
+      .custom-visual { min-height: 300px; border-radius: 26px; background: url("logos/custom-order.png") center/cover; box-shadow: 0 20px 40px rgba(46, 36, 29, 0.12); }
+      .custom-form { max-width: 900px; margin: 0 auto; padding: 28px clamp(22px, 5vw, 48px); background: var(--cream); border: 1px solid var(--line); border-radius: 24px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+      .custom-form label { display: grid; gap: 7px; font-size: 11px; color: var(--muted); }
+      .custom-form .wide { grid-column: 1 / -1; }
+      .custom-form input, .custom-form select, .custom-form textarea { width: 100%; padding: 12px 13px; border: 1px solid var(--line); border-radius: 11px; background: #fff; color: var(--ink); font: inherit; }
+      .custom-form textarea { resize: vertical; min-height: 110px; }
+      .custom-form input[type="file"] { padding: 9px; }
+      .attachment-preview { display: none; max-width: 180px; max-height: 120px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+      .custom-form button { border: 0; cursor: pointer; }
+      @media (max-width: 720px) { .custom-hero { grid-template-columns: 1fr; gap: 22px; } .custom-visual { min-height: 220px; } .custom-form { grid-template-columns: 1fr; } .custom-form .wide { grid-column: auto; } }
+    </style>
+  </head>
+  <body>
+    <div class="announcement">فكرتك، بتنفيذ يدوي <span>•</span> احكيلنا تفاصيلها</div>
+    <main class="custom-page">
+      <section class="custom-hero">
+        <div>
+          <p class="eyebrow">CUSTOM ORDERS</p>
+          <h1>فكرتك، نعملها مخصوص ليك.</h1>
+          <p>اختار النوع والألوان والمقاس، واحكيلنا عن فكرتك. هنراجع الطلب ونتواصل معاك بتفاصيل التنفيذ والسعر.</p>
+          <a class="catalog-back" href="index.html">العودة للمتجر ←</a>
+        </div>
+        <div class="custom-visual" aria-label="منتجات مصنوعة يدويًا"></div>
+      </section>
+      <form class="custom-form" id="custom-order-form">
+        <label>الاسم<input name="name" type="text" placeholder="اسمك" required /></label>
+        <label>رقم الهاتف<input name="phone" type="tel" placeholder="01xxxxxxxxx" required /></label>
+        <label>نوع المنتج<select name="category"><option>كروشيه</option><option>مشغولات خرز</option><option>ميدالية</option><option>شنطة</option><option>أخرى</option></select></label>
+        <label>المقاس أو الكمية<input name="size" type="text" placeholder="مثال: متوسط، قطعتين" /></label>
+        <label>الألوان المفضلة<input name="colors" type="text" placeholder="مثال: أوف وايت ووردي" /></label>
+        <label>موعد التسليم المطلوب<input name="deadline" type="text" placeholder="مثال: خلال أسبوعين" /></label>
+        <label class="wide">تفاصيل فكرتك<textarea name="details" placeholder="اكتب كل التفاصيل أو أرفق رابط صورة مرجعية..."></textarea></label>
+        <label class="wide">صورة مرجعية<input id="reference-image" name="reference_image" type="file" accept="image/png,image/jpeg,image/webp" /><small>اختياري، حجم الصورة لا يتعدى 2 ميجابايت</small><img class="attachment-preview" id="attachment-preview" alt="معاينة الصورة المرفقة" /></label>
+        <div class="wide"><button class="button dark" type="submit"><span>إرسال طلب خاص</span><span>→</span></button></div>
+      </form>
+    </main>
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+    <script src="custom-orders.js"></script>
+  </body>
+</html>

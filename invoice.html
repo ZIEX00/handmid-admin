@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HANDMADE | الفاتورة</title>
+    <style>
+      :root { --ink: #2e241d; --muted: #75685e; --paper: #f6f0e7; --line: #e4d8ca; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: Arial, sans-serif; }
+      .invoice { width: min(820px, calc(100% - 32px)); margin: 32px auto; padding: 34px; background: #fffdfb; border: 1px solid var(--line); border-radius: 18px; }
+      .invoice-head { display: flex; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); padding-bottom: 22px; }
+      .invoice-head h1 { margin: 0 0 6px; font-size: 28px; }
+      .invoice-head p, .meta { color: var(--muted); font-size: 12px; margin: 5px 0; }
+      .invoice-title { text-align: left; }
+      .invoice-title strong { display: block; font-size: 22px; }
+      .customer { padding: 22px 0; display: grid; gap: 5px; font-size: 13px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      th, td { padding: 12px 8px; border-bottom: 1px solid var(--line); text-align: right; font-size: 12px; }
+      th { color: var(--muted); font-size: 11px; }
+      .total { display: flex; justify-content: space-between; margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--ink); font-weight: 700; font-size: 16px; }
+      .invoice-actions { display: flex; justify-content: center; gap: 10px; margin-top: 28px; }
+      button, a { border: 1px solid var(--ink); border-radius: 999px; padding: 10px 18px; background: var(--ink); color: #fff; cursor: pointer; text-decoration: none; font: inherit; font-size: 12px; }
+      a { background: transparent; color: var(--ink); }
+      .empty { text-align: center; padding: 80px 10px; color: var(--muted); }
+      @media print { body { background: #fff; } .invoice { width: 100%; margin: 0; border: 0; } .invoice-actions { display: none; } }
+    </style>
+  </head>
+  <body>
+    <main class="invoice" id="invoice"></main>
+    <script src="invoice.js"></script>
+  </body>
+</html>
