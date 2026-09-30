@@ -39,27 +39,33 @@ alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 
 -- 5) Policies (dashboard admin only)
+drop policy if exists "Public can read products" on public.products;
 create policy "Public can read products"
   on public.products for select
   using (true);
 
+drop policy if exists "Authenticated users can manage products" on public.products;
 create policy "Authenticated users can manage products"
   on public.products for all
   using (auth.role() = 'authenticated')
   with check (auth.role() = 'authenticated');
 
+drop policy if exists "Authenticated users can read orders" on public.orders;
 create policy "Authenticated users can read orders"
   on public.orders for select
   using (auth.role() = 'authenticated');
 
+drop policy if exists "Authenticated users can insert orders" on public.orders;
 create policy "Authenticated users can insert orders"
   on public.orders for insert
   with check (auth.role() = 'authenticated');
 
+drop policy if exists "Authenticated users can update orders" on public.orders;
 create policy "Authenticated users can update orders"
   on public.orders for update
   using (auth.role() = 'authenticated');
 
+drop policy if exists "Authenticated users can manage order items" on public.order_items;
 create policy "Authenticated users can manage order items"
   on public.order_items for all
   using (auth.role() = 'authenticated')
@@ -85,6 +91,64 @@ create policy "Authenticated users can delete orders"
   using (auth.role() = 'authenticated');
 grant insert on public.orders to anon;
 grant select, update, delete on public.orders to authenticated;
+
+create table if not exists public.custom_orders (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  phone text not null,
+  category text,
+  size text,
+  colors text,
+  deadline text,
+  details text,
+  reference_image text,
+  status text not null default 'pending' check (status in ('pending', 'confirmed', 'preparing', 'shipped', 'completed', 'cancelled')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.custom_orders enable row level security;
+drop policy if exists "Public can submit custom orders" on public.custom_orders;
+create policy "Public can submit custom orders"
+  on public.custom_orders for insert
+  to anon
+  with check (char_length(trim(name)) > 0 and char_length(trim(phone)) > 0 and status = 'pending');
+drop policy if exists "Authenticated users can manage custom orders" on public.custom_orders;
+create policy "Authenticated users can manage custom orders"
+  on public.custom_orders for all
+  to authenticated
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+grant insert on public.custom_orders to anon;
+grant select, update, delete on public.custom_orders to authenticated;
+
+create table if not exists public.reviews (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  rating smallint not null check (rating between 1 and 5),
+  text text not null,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.reviews enable row level security;
+drop policy if exists "Public can submit reviews" on public.reviews;
+create policy "Public can submit reviews"
+  on public.reviews for insert
+  to anon
+  with check (char_length(trim(name)) > 0 and char_length(trim(text)) > 0 and rating between 1 and 5 and status = 'pending');
+drop policy if exists "Public can read approved reviews" on public.reviews;
+create policy "Public can read approved reviews"
+  on public.reviews for select
+  to anon
+  using (status = 'approved');
+drop policy if exists "Authenticated users can manage reviews" on public.reviews;
+create policy "Authenticated users can manage reviews"
+  on public.reviews for all
+  to authenticated
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+grant insert, select on public.reviews to anon;
+grant select, update, delete on public.reviews to authenticated;
 
 -- Optional: example product seed
 insert into public.products (name, name_ar, category, description, price, image, stock)

@@ -1,13 +1,28 @@
 const invoiceRoot = document.querySelector("#invoice");
 const orderId = new URLSearchParams(window.location.search).get("id");
+const invoiceSupabase = window.supabase?.createClient(
+  "https://gdhihedzthuininorhtw.supabase.co",
+  "sb_publishable_CPWqXhFi7w4NOBeYdVvNcw_VFEQChY4",
+);
 
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 }
 
-function renderInvoice() {
-  const orders = JSON.parse(localStorage.getItem("handmade-orders") || "[]");
-  const order = orders.find((item) => String(item.id) === String(orderId));
+async function renderInvoice() {
+  let order;
+  if (invoiceSupabase && orderId) {
+    const { data, error } = await invoiceSupabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!error) order = data;
+  }
+  if (!order) {
+    const orders = JSON.parse(localStorage.getItem("handmade-orders") || "[]");
+    order = orders.find((item) => String(item.id) === String(orderId));
+  }
   if (!order) {
     invoiceRoot.innerHTML = '<div class="empty">الفاتورة غير موجودة أو تم حذف الطلب.</div>';
     return;

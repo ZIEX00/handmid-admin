@@ -191,6 +191,20 @@ async function loadOrders() {
 }
 
 async function loadCustomRequests() {
+  if (handmadeSupabase) {
+    const { data, error } = await handmadeSupabase
+      .from('custom_orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      customRequestsList.innerHTML = '<div class="empty-state">تعذر تحميل الطلبات الخاصة.</div>';
+      return;
+    }
+    customRequests = data || [];
+    renderCustomRequests();
+    return;
+  }
+
   try {
     const saved = JSON.parse(localStorage.getItem(CUSTOM_ORDER_KEY) || '[]');
     customRequests = Array.isArray(saved) ? saved : [];
@@ -201,6 +215,20 @@ async function loadCustomRequests() {
 }
 
 async function loadReviews() {
+  if (handmadeSupabase) {
+    const { data, error } = await handmadeSupabase
+      .from('reviews')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      reviewsList.innerHTML = '<div class="empty-state">تعذر تحميل آراء العملاء.</div>';
+      return;
+    }
+    reviews = data || [];
+    renderReviews();
+    return;
+  }
+
   try {
     const saved = JSON.parse(localStorage.getItem(REVIEW_KEY) || '[]');
     reviews = Array.isArray(saved) ? saved : [];
@@ -362,30 +390,64 @@ async function deleteOrder(orderId) {
   setAuthMessage('تم حذف الطلب.', 'success');
 }
 
-function updateCustomRequestStatus(requestId, status) {
+async function updateCustomRequestStatus(requestId, status) {
+  if (handmadeSupabase) {
+    const { error } = await handmadeSupabase.from('custom_orders').update({ status }).eq('id', requestId);
+    if (error) {
+      setAuthMessage('تعذر تحديث حالة الطلب الخاص.', 'error');
+      await loadCustomRequests();
+      return;
+    }
+  }
+
   customRequests = customRequests.map((request) => String(request.id) === String(requestId) ? { ...request, status } : request);
   localStorage.setItem(CUSTOM_ORDER_KEY, JSON.stringify(customRequests));
   renderCustomRequests();
   setAuthMessage('تم تحديث حالة الطلب الخاص.', 'success');
 }
 
-function deleteCustomRequest(requestId) {
+async function deleteCustomRequest(requestId) {
   if (!window.confirm('هل أنت متأكد من حذف الطلب الخاص؟')) return;
+  if (handmadeSupabase) {
+    const { error } = await handmadeSupabase.from('custom_orders').delete().eq('id', requestId);
+    if (error) {
+      setAuthMessage('تعذر حذف الطلب الخاص.', 'error');
+      return;
+    }
+  }
+
   customRequests = customRequests.filter((request) => String(request.id) !== String(requestId));
   localStorage.setItem(CUSTOM_ORDER_KEY, JSON.stringify(customRequests));
   renderCustomRequests();
   setAuthMessage('تم حذف الطلب الخاص.', 'success');
 }
 
-function updateReviewStatus(reviewId, status) {
+async function updateReviewStatus(reviewId, status) {
+  if (handmadeSupabase) {
+    const { error } = await handmadeSupabase.from('reviews').update({ status }).eq('id', reviewId);
+    if (error) {
+      setAuthMessage('تعذر تحديث حالة الرأي.', 'error');
+      await loadReviews();
+      return;
+    }
+  }
+
   reviews = reviews.map((review) => String(review.id) === String(reviewId) ? { ...review, status } : review);
   localStorage.setItem(REVIEW_KEY, JSON.stringify(reviews));
   renderReviews();
   setAuthMessage(status === 'approved' ? 'تم نشر الرأي على الموقع.' : 'تم رفض الرأي.', 'success');
 }
 
-function deleteReview(reviewId) {
+async function deleteReview(reviewId) {
   if (!window.confirm('هل أنت متأكد من حذف هذا الرأي؟')) return;
+  if (handmadeSupabase) {
+    const { error } = await handmadeSupabase.from('reviews').delete().eq('id', reviewId);
+    if (error) {
+      setAuthMessage('تعذر حذف الرأي.', 'error');
+      return;
+    }
+  }
+
   reviews = reviews.filter((review) => String(review.id) !== String(reviewId));
   localStorage.setItem(REVIEW_KEY, JSON.stringify(reviews));
   renderReviews();

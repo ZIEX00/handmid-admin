@@ -2,6 +2,8 @@ const form = document.querySelector("#custom-order-form");
 const toastContainer = document.querySelector("#toast-container");
 const imageInput = document.querySelector("#reference-image");
 const imagePreview = document.querySelector("#attachment-preview");
+const SUPABASE_URL = "https://gdhihedzthuininorhtw.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_CPWqXhFi7w4NOBeYdVvNcw_VFEQChY4";
 
 function showToast(message) {
   const toast = document.createElement("div");
@@ -45,30 +47,37 @@ imageInput.addEventListener("change", () => {
   imagePreview.style.display = "block";
 });
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const data = new FormData(form);
   const file = imageInput.files[0];
-  const saveRequest = (image) => {
+  const saveRequest = async (image) => {
     const request = {
-    id: Date.now(),
-    name: String(data.get("name") || "").trim(),
-    phone: String(data.get("phone") || "").trim(),
-    category: String(data.get("category") || "").trim(),
-    size: String(data.get("size") || "").trim(),
-    colors: String(data.get("colors") || "").trim(),
-    deadline: String(data.get("deadline") || "").trim(),
-    details: String(data.get("details") || "").trim(),
-    reference_image: image || "",
-    status: "pending",
-    created_at: new Date().toISOString(),
+      name: String(data.get("name") || "").trim(),
+      phone: String(data.get("phone") || "").trim(),
+      category: String(data.get("category") || "").trim(),
+      size: String(data.get("size") || "").trim(),
+      colors: String(data.get("colors") || "").trim(),
+      deadline: String(data.get("deadline") || "").trim(),
+      details: String(data.get("details") || "").trim(),
+      reference_image: image || "",
+      status: "pending",
     };
-    const requests = JSON.parse(localStorage.getItem("handmade-custom-orders") || "[]");
-    requests.unshift(request);
     try {
-      localStorage.setItem("handmade-custom-orders", JSON.stringify(requests));
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/custom_orders`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify(request),
+      });
+      if (!response.ok) throw new Error(await response.text());
     } catch (error) {
-      showToast("الصورة كبيرة على التخزين، اختار صورة أصغر.");
+      console.error("Unable to submit custom order.", error);
+      showToast("تعذر إرسال الطلب الخاص. تحقق من الاتصال وحاول مرة أخرى.");
       return;
     }
     form.reset();

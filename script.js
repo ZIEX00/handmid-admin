@@ -208,10 +208,20 @@ function getReviews() {
   localStorage.setItem(REVIEW_KEY, JSON.stringify(initialReviews));
   return initialReviews;
 }
-function renderReviews() {
+async function renderReviews() {
   const reviewGrid = document.querySelector("#review-grid");
   if (!reviewGrid) return;
-  const approvedReviews = getReviews().filter((review) => review.status === "approved");
+  let approvedReviews = getReviews().filter((review) => review.status === "approved");
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=id,name,rating,text,status,created_at&status=eq.approved&order=created_at.desc`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (!response.ok) throw new Error(await response.text());
+    const sharedReviews = await response.json();
+    if (sharedReviews.length) approvedReviews = sharedReviews;
+  } catch (error) {
+    console.warn("Shared reviews unavailable; showing saved starter reviews.", error);
+  }
   const arabicSeedReviews = {
     "seed-sara": "الشنطة أجمل بكتير في الحقيقة، وأنا بحب السلسلة الجديدة!",
     "seed-omar": "التوصيل كان سريع جدًا والتغليف جميل. السوار أحلى من الصور!",
@@ -310,10 +320,29 @@ function updateCart() {
   document.querySelector("#cart-total").textContent = `${translations[language].currency} ${total}`;
   document.querySelector("#cart-items").innerHTML = cart.length
     ? cart
-        .map(
-          (item) =>
-            `<div style="display:flex;gap:12px;align-items:center;padding:15px 0;border-bottom:1px solid #ddd1c5"><img src="${item.image}" style="width:58px;height:58px;object-fit:cover"><div><b>${language === "ar" ? item.name_ar || item.name : item.name}</b><p style="margin:5px 0;color:#75685e">${translations[language].currency} ${item.price} × ${item.quantity}</p></div></div>`,
-        )
+        .map((item, index) => {
+          const name = language === "ar" ? item.name_ar || item.name : item.name;
+          const quantity = Number(item.quantity || 1);
+          const lineTotal = Number(item.price || 0) * quantity;
+          const decreaseLabel = language === "ar" ? "تقليل الكمية" : "Decrease quantity";
+          const increaseLabel = language === "ar" ? "زيادة الكمية" : "Increase quantity";
+          const removeLabel = language === "ar" ? "حذف" : "Remove";
+          return `<article class="cart-item">
+            <img class="cart-item-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(name)}">
+            <div class="cart-item-info">
+              <b class="cart-item-name">${escapeHtml(name)}</b>
+              <span class="cart-item-price">${translations[language].currency} ${lineTotal}</span>
+              <div class="cart-item-actions">
+                <div class="quantity-control" aria-label="${language === "ar" ? "الكمية" : "Quantity"}">
+                  <button type="button" data-cart-action="decrease" data-cart-index="${index}" aria-label="${decreaseLabel}" ${quantity <= 1 ? "disabled" : ""}>−</button>
+                  <output>${quantity}</output>
+                  <button type="button" data-cart-action="increase" data-cart-index="${index}" aria-label="${increaseLabel}">+</button>
+                </div>
+                <button class="cart-remove" type="button" data-cart-action="remove" data-cart-index="${index}">${removeLabel}</button>
+              </div>
+            </div>
+          </article>`;
+        })
         .join("")
     : `<p class="empty-cart">${translations[language].emptyCart}</p>`;
 
@@ -357,6 +386,26 @@ document.addEventListener("click", (event) => {
   const action = event.target.closest("[data-action]")?.dataset.action;
   if (action === "cart") toggleCart(true);
   if (action === "close-cart") toggleCart(false);
+  const cartControl = event.target.closest("[data-cart-action]");
+  if (cartControl) {
+    const index = Number(cartControl.dataset.cartIndex);
+    const item = cart[index];
+    if (!item) return;
+    if (cartControl.dataset.cartAction === "remove") {
+      cart.splice(index, 1);
+    } else if (cartControl.dataset.cartAction === "decrease") {
+      if (item.quantity > 1) item.quantity--;
+    } else if (cartControl.dataset.cartAction === "increase") {
+      const availableStock = Number(item.stock);
+      if (Number.isFinite(availableStock) && item.quantity >= availableStock) {
+        showToast(language === "ar" ? "الكمية المتاحة من هذا المنتج خلصت." : "This product is out of stock.", "error");
+        return;
+      }
+      item.quantity++;
+    }
+    updateCart();
+    return;
+  }
   if (action === "favorites") {
     document.querySelector("#shop").scrollIntoView({ behavior: "smooth" });
     showToast(language === "ar" ? "اختار علامة القلب لإضافة المنتجات للمفضلة." : "Use the heart icon on a product to save it to favorites.", "success");
@@ -396,16 +445,29 @@ document.addEventListener("submit", async (event) => {
   if (event.target.matches("#review-form")) {
     event.preventDefault();
     const formData = new FormData(event.target);
-    const reviews = getReviews();
-    reviews.unshift({
-      id: Date.now(),
+    const review = {
       name: String(formData.get("name") || "").trim(),
       rating: Number(formData.get("rating") || 5),
       text: String(formData.get("text") || "").trim(),
       status: "pending",
-      created_at: new Date().toISOString(),
-    });
-    localStorage.setItem(REVIEW_KEY, JSON.stringify(reviews));
+    };
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify(review),
+      });
+      if (!response.ok) throw new Error(await response.text());
+    } catch (error) {
+      console.error("Unable to submit review.", error);
+      showToast(language === "ar" ? "تعذر إرسال الرأي. تحقق من الاتصال وحاول مرة أخرى." : "Could not send your review. Check your connection and try again.", "error");
+      return;
+    }
     event.target.reset();
     showToast(language === "ar" ? "تم إرسال رأيك وسيظهر بعد موافقة الإدارة." : "Your review was sent and will appear after approval.", "success");
     return;
