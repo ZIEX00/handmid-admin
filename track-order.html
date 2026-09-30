@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="تتبع حالة طلبك من HANDMADE." />
+    <title>HANDMADE | تتبع طلبك</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="track-order.js" defer></script>
+  </head>
+  <body>
+    <main class="tracking-page">
+      <header class="tracking-header">
+        <a class="brand" href="index.html" aria-label="HANDMADE home">
+          <span class="brand-mark">✳</span>
+          <span><strong>HANDMADE</strong><small>Small things, big stories.</small></span>
+        </a>
+        <a href="index.html" data-i18n="backToShop">العودة للمتجر</a>
+      </header>
+      <section class="tracking-panel">
+        <p class="eyebrow" data-i18n="eyebrow">ORDER SERVICE</p>
+        <h1 data-i18n="title">تتبع طلبك</h1>
+        <p data-i18n="description">اكتب رقم الطلب ورقم الهاتف المستخدم عند الشراء لمتابعة الحالة أو إلغاء الطلب قبل تأكيده.</p>
+        <form class="tracking-form" id="tracking-form">
+          <label>
+            <span data-i18n="orderId">رقم الطلب</span>
+            <input id="order-id" name="orderId" type="text" autocomplete="off" required />
+          </label>
+          <label>
+            <span data-i18n="phone">رقم الهاتف المستخدم في الطلب</span>
+            <input id="order-phone" name="phone" type="tel" autocomplete="tel" required />
+          </label>
+          <button class="button dark" type="submit" data-i18n="trackButton">تتبع الطلب</button>
+        </form>
+        <p class="tracking-message" id="tracking-message" role="status" aria-live="polite"></p>
+        <section class="tracking-result" id="tracking-result" aria-live="polite"></section>
+      </section>
+    </main>
+  </body>
+</html>

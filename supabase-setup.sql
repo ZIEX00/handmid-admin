@@ -150,6 +150,80 @@ create policy "Authenticated users can manage reviews"
 grant insert, select on public.reviews to anon;
 grant select, update, delete on public.reviews to authenticated;
 
+create or replace function public.get_customer_order(p_order_id uuid, p_phone text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  matched_order public.orders%rowtype;
+begin
+  select * into matched_order
+  from public.orders
+  where id = p_order_id
+    and char_length(regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g')) >= 8
+    and regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g');
+
+  if not found then
+    return null;
+  end if;
+
+  return jsonb_build_object(
+    'id', matched_order.id,
+    'customer_name', matched_order.customer_name,
+    'items', matched_order.items,
+    'total', matched_order.total,
+    'status', matched_order.status,
+    'created_at', matched_order.created_at,
+    'notes', matched_order.notes
+  );
+end;
+$$;
+
+create or replace function public.cancel_customer_order(p_order_id uuid, p_phone text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  matched_status text;
+begin
+  if char_length(regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g')) < 8 then
+    return null;
+  end if;
+
+  update public.orders
+  set status = 'cancelled'
+  where id = p_order_id
+    and status = 'pending'
+    and regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g')
+  returning status into matched_status;
+
+  if found then
+    return jsonb_build_object('cancelled', true, 'status', matched_status);
+  end if;
+
+  select status into matched_status
+  from public.orders
+  where id = p_order_id
+    and regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g');
+
+  if not found then
+    return null;
+  end if;
+
+  return jsonb_build_object('cancelled', false, 'status', matched_status);
+end;
+$$;
+
+revoke all on function public.get_customer_order(uuid, text) from public;
+revoke all on function public.cancel_customer_order(uuid, text) from public;
+grant execute on function public.get_customer_order(uuid, text) to anon, authenticated;
+grant execute on function public.cancel_customer_order(uuid, text) to anon, authenticated;
+
 -- Optional: example product seed
 insert into public.products (name, name_ar, category, description, price, image, stock)
 values
@@ -157,3 +231,5 @@ values
   ('Beaded Lolly Bag', 'شنطة خرز لولي', 'Beadwork', 'Colorful handcrafted beadwork bag.', 180, 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=900&q=80', 12),
   ('Crochet Medallion', 'ميدالية كروشيه', 'Keychains', 'Handmade keychain with a cozy crochet finish.', 150, 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80', 25)
 on conflict do nothing;
+
+notify pgrst, 'reload schema';

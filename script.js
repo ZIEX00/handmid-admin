@@ -53,6 +53,23 @@ function showToast(message, type = "success") {
     window.setTimeout(() => toast.remove(), 250);
   }, 4200);
 }
+function showOrderTrackingToast(orderId) {
+  const container = document.querySelector("#toast-container");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = "site-toast order-tracking-toast";
+  const message = document.createElement("span");
+  message.textContent = language === "ar" ? `تم استلام طلبك. رقم الطلب: ${orderId}` : `Order received. Order number: ${orderId}`;
+  const link = document.createElement("a");
+  link.href = `track-order.html?id=${encodeURIComponent(orderId)}`;
+  link.textContent = language === "ar" ? "تتبع الطلب أو إلغاؤه" : "Track or cancel order";
+  toast.append(message, link);
+  container.appendChild(toast);
+  window.setTimeout(() => {
+    toast.classList.add("hide");
+    window.setTimeout(() => toast.remove(), 250);
+  }, 15000);
+}
 function updateStoredInventory(items) {
   const saved = localStorage.getItem("handmade-products");
   if (!saved) return;
@@ -89,13 +106,13 @@ function toggleFavorite(productId) {
 const translations = {
   en: {
     announcement: "Free delivery on orders over EGP 800 <span>•</span> Made by hand in Egypt",
-    home: "Home", shop: "Shop", categories: "Categories", customOrders: "Custom Orders", about: "About", contact: "Contact", contactEyebrow: "LET'S TALK", contactTitle: "A little question? We're here.", contactDescription: "Message us about an order, a custom idea, or anything you'd like to know.", whatsappUs: "Chat with us on WhatsApp",
+    home: "Home", shop: "Shop", categories: "Categories", customOrders: "Custom Orders", about: "About", contact: "Contact", trackOrder: "Track Order", contactEyebrow: "LET'S TALK", contactTitle: "A little question? We're here.", contactDescription: "Message us about an order, a custom idea, or anything you'd like to know.", whatsappUs: "Chat with us on WhatsApp",
     heroEyebrow: "HANDMADE WITH LOVE", heroTitle: "Made by Hand.<br>Made for You.", heroDescription: "Unique crochet pieces, beautiful beadwork and handmade accessories — crafted with care, just for you.", shopCollection: "Shop Collection", shopByCategory: "Shop by Category", viewAll: "View All", featuredProducts: "Featured Products",
     yourIdea: "Your Idea, Handmade.", customDescription: "Want something special? Choose your colors, size and style — and we’ll create it just for you.", requestOrder: "Request Custom Order", chooseStyle: "Choose Your Style", bracelets: "◌ Bracelets", necklaces: "◌ Necklaces", keychains: "◌ Keychains", crochetItems: "◌ Crochet Items", customerReviews: "What Our Customers Say", viewReviews: "View All Reviews", followUs: "Follow Us @handmade", moreInstagram: "More on Instagram", yourBag: "Your Bag", emptyCart: "Your bag is waiting for something special.", total: "Total", checkout: "Checkout", addToBag: "Add to bag", loading: "Loading handmade pieces...", currency: "EGP", storyEyebrow: "OUR STORY", storyTitle: "Crafted slowly, made to feel personal.", storyDescription: "Each handmade piece begins with an idea, a color palette, and a lot of love. We design crochet, beadwork, and accessories that feel warm, wearable, and unique.", smallBatch: "Small batch", smallBatchDescription: "Thoughtfully made in limited runs.", giftReady: "Gift-ready", giftReadyDescription: "Beautiful packaging for every order.", madeInEgypt: "Made in Egypt", nameLabel: "Name", phoneLabel: "Phone", noteLabel: "Order note", placeOrder: "Place Order", writeReview: "Share your review", sendReview: "Send review",
   },
   ar: {
     announcement: "توصيل مجاني للطلبات أكثر من ٨٠٠ جنيه <span>•</span> مصنوع يدويًا في مصر",
-    home: "الرئيسية", shop: "المتجر", categories: "التصنيفات", customOrders: "طلبات خاصة", about: "عن Handmade", contact: "تواصل معنا", contactEyebrow: "احكيلنا", contactTitle: "عندك سؤال؟ إحنا موجودين.", contactDescription: "كلمينا عن طلبك، أو فكرتك لتصميم خاص، أو أي حاجة حابة تعرفيها.", whatsappUs: "راسلينا على واتساب",
+    home: "الرئيسية", shop: "المتجر", categories: "التصنيفات", customOrders: "طلبات خاصة", about: "عن Handmade", contact: "تواصل معنا", trackOrder: "تتبع طلبك", contactEyebrow: "احكيلنا", contactTitle: "عندك سؤال؟ إحنا موجودين.", contactDescription: "كلمينا عن طلبك، أو فكرتك لتصميم خاص، أو أي حاجة حابة تعرفيها.", whatsappUs: "راسلينا على واتساب",
     heroEyebrow: "مصنوع بحب", heroTitle: "صُنع يدويًا.<br>صُنع لك.", heroDescription: "قطع كروشيه مميزة، وإكسسوارات من الخرز مصنوعة يدويًا بعناية مخصوص عشانك.", shopCollection: "تسوق المجموعة", shopByCategory: "تسوق حسب التصنيف", viewAll: "عرض الكل", featuredProducts: "منتجات مميزة",
     yourIdea: "فكرتك، بتنفيذ يدوي.", customDescription: "عايز حاجة مميزة؟ اختار الألوان والمقاس والشكل، وإحنا هننفذها مخصوص ليك.", requestOrder: "اطلب تصميم خاص", chooseStyle: "اختار الشكل", bracelets: "◌ أساور", necklaces: "◌ سلاسل", keychains: "◌ ميداليات", crochetItems: "◌ منتجات كروشيه", customerReviews: "آراء عملائنا", viewReviews: "عرض كل الآراء", followUs: "تابعنا @handmaid_00", moreInstagram: "المزيد على إنستجرام", yourBag: "سلتك", emptyCart: "سلتك مستنية حاجة مميزة.", total: "الإجمالي", checkout: "إتمام الطلب", addToBag: "أضف للسلة", loading: "جاري تحميل المنتجات...", currency: "جنيه", storyEyebrow: "حكايتنا", storyTitle: "مصنوع على مهله، ومخصوص عشانك.", storyDescription: "كل قطعة بتبدأ بفكرة وألوان متناسقة وحب كبير. بنصمم كروشيه ومشغولات خرز وإكسسوارات دافئة ومميزة وسهلة الاستخدام.", smallBatch: "كميات محدودة", smallBatchDescription: "مصنوعة بعناية وبأعداد قليلة.", giftReady: "جاهزة كهدية", giftReadyDescription: "تغليف جميل مع كل طلب.", madeInEgypt: "مصنوع في مصر", nameLabel: "الاسم", phoneLabel: "رقم الهاتف", noteLabel: "ملاحظات الطلب", placeOrder: "تأكيد الطلب", writeReview: "شاركنا رأيك", sendReview: "إرسال الرأي",
   },
@@ -481,7 +498,7 @@ document.addEventListener("submit", async (event) => {
     const note = event.target.elements.note.value.trim();
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const order = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       customer_name: name,
       phone,
       notes: note,
@@ -504,6 +521,7 @@ document.addEventListener("submit", async (event) => {
           Prefer: "return=minimal",
         },
         body: JSON.stringify({
+          id: order.id,
           customer_name: name,
           phone,
           notes: note,
@@ -528,7 +546,7 @@ document.addEventListener("submit", async (event) => {
     updateCart();
     toggleCart(false);
     event.target.reset();
-    showToast(language === "ar" ? `شكرًا يا ${name}! تم استلام طلبك وسنتواصل معك قريبًا.` : `Thank you, ${name}! Your order request has been received.`, "success");
+    showOrderTrackingToast(order.id);
   }
 });
 applyLanguage();
