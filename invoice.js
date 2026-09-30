@@ -11,19 +11,33 @@ function escapeHtml(value) {
 
 async function renderInvoice() {
   let order;
+  let invoiceError;
   if (invoiceSupabase && orderId) {
-    const { data, error } = await invoiceSupabase
-      .from("orders")
-      .select("*")
-      .eq("id", orderId)
-      .maybeSingle();
-    if (!error) order = data;
+    const { data: { session }, error: sessionError } = await invoiceSupabase.auth.getSession();
+    if (sessionError) {
+      invoiceError = sessionError;
+    } else if (!session) {
+      invoiceError = new Error("جلسة الإدارة غير موجودة. ارجع للداشبورد وسجّل الدخول ثم افتح الفاتورة مرة أخرى.");
+    } else {
+      const { data, error } = await invoiceSupabase
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (error) invoiceError = error;
+      else order = data;
+    }
   }
   if (!order) {
     const orders = JSON.parse(localStorage.getItem("handmade-orders") || "[]");
     order = orders.find((item) => String(item.id) === String(orderId));
   }
   if (!order) {
+    if (invoiceError) {
+      console.error("Unable to load invoice from Supabase.", invoiceError);
+      invoiceRoot.innerHTML = `<div class="empty">تعذر تحميل الفاتورة من قاعدة البيانات: ${escapeHtml(invoiceError.message)}<br>ارجع للداشبورد وتأكد من تسجيل الدخول.</div>`;
+      return;
+    }
     invoiceRoot.innerHTML = '<div class="empty">الفاتورة غير موجودة أو تم حذف الطلب.</div>';
     return;
   }
