@@ -12,6 +12,9 @@ create table if not exists public.products (
   created_at timestamptz not null default now()
 );
 
+alter table public.products
+  add column if not exists images text[] not null default '{}';
+
 -- 2) Orders table
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),

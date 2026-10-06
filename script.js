@@ -192,6 +192,27 @@ function getVisibleProducts() {
     return matchesCategory && matchesSearch;
   });
 }
+function addProductToCart(product) {
+  const existing = cart.find((item) => item.name === product.name);
+  const availableStock = Number(product.stock);
+  if (Number.isFinite(availableStock) && availableStock <= (existing?.quantity || 0)) {
+    showToast(language === "ar" ? "الكمية المتاحة من هذا المنتج خلصت." : "This product is out of stock.", "error");
+    return false;
+  }
+  existing ? existing.quantity++ : cart.push({ ...product, quantity: 1 });
+  updateCart();
+  toggleCart(true);
+  return true;
+}
+function showProductDetails(product) {
+  window.openProductDetails(product, {
+    language,
+    currency: translations[language].currency,
+    addLabel: translations[language].addToBag,
+    closeLabel: language === "ar" ? "إغلاق" : "Close",
+    onAdd: () => addProductToCart(product),
+  });
+}
 function renderProducts() {
   const visibleProducts = getVisibleProducts();
   if (!visibleProducts.length) {
@@ -202,7 +223,7 @@ function renderProducts() {
   document.querySelector("#product-grid").innerHTML = visibleProducts
     .map(
       (product, index) =>
-        `<article class="product-card"><button class="heart ${getFavoriteIds().includes(String(product.id || index)) ? "active" : ""}" data-favorite-id="${product.id || index}" aria-label="Add ${product.name} to wishlist"><i data-lucide="heart"></i></button><img src="${product.image}" alt="${product.name}" loading="lazy"><div class="product-info"><h3>${language === "ar" ? product.name_ar || product.name : product.name}</h3><strong class="price">${translations[language].currency} ${product.price}</strong><div class="stars">★★★★★ <small>(${index * 7 + 12})</small></div><button class="button dark add-to-cart" data-index="${product.id || index}" style="margin-top:10px;padding:8px 11px;width:100%"><span>${translations[language].addToBag}</span> <span>+</span></button></div></article>`,
+        `<article class="product-card" data-product-id="${escapeHtml(product.id || index)}"><button class="heart ${getFavoriteIds().includes(String(product.id || index)) ? "active" : ""}" data-favorite-id="${escapeHtml(product.id || index)}" aria-label="Add ${escapeHtml(product.name)} to wishlist"><i data-lucide="heart"></i></button><img src="${escapeHtml(product.image)}" alt="${escapeHtml(language === "ar" ? product.name_ar || product.name : product.name)}" loading="lazy"><div class="product-info"><h3>${escapeHtml(language === "ar" ? product.name_ar || product.name : product.name)}</h3><strong class="price">${translations[language].currency} ${escapeHtml(product.price)}</strong><div class="stars">★★★★★ <small>(${index * 7 + 12})</small></div><button class="product-details-trigger" type="button">${language === "ar" ? "عرض التفاصيل" : "View details"}</button><button class="button dark add-to-cart" data-index="${escapeHtml(product.id || index)}" style="margin-top:10px;padding:8px 11px;width:100%"><span>${translations[language].addToBag}</span> <span>+</span></button></div></article>`,
     )
     .join("");
   lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
@@ -376,6 +397,23 @@ function toggleCart(open) {
     .setAttribute("aria-hidden", String(!open));
 }
 document.addEventListener("click", (event) => {
+  const menuButton = event.target.closest(".menu-button");
+  if (menuButton) {
+    const navigation = document.querySelector("#main-nav");
+    const isExpanded = menuButton.getAttribute("aria-expanded") === "true";
+    menuButton.setAttribute("aria-expanded", String(!isExpanded));
+    menuButton.setAttribute("aria-label", isExpanded ? "Open menu" : "Close menu");
+    navigation.classList.toggle("mobile-open", !isExpanded);
+    return;
+  }
+  if (event.target.closest("#main-nav a")) {
+    const navigation = document.querySelector("#main-nav");
+    const menuButton = document.querySelector(".menu-button");
+    navigation.classList.remove("mobile-open");
+    menuButton.setAttribute("aria-expanded", "false");
+    menuButton.setAttribute("aria-label", "Open menu");
+  }
+
   const favoriteButton = event.target.closest(".heart");
   if (favoriteButton) {
     toggleFavorite(favoriteButton.dataset.favoriteId);
@@ -436,15 +474,19 @@ document.addEventListener("click", (event) => {
   if (add) {
     const product = products.find((item) => String(item.id || products.indexOf(item)) === String(add.dataset.index)) || products[Number(add.dataset.index)];
     if (!product) return;
-    const existing = cart.find((item) => item.name === product.name);
-    const availableStock = Number(product.stock);
-    if (Number.isFinite(availableStock) && availableStock <= (existing?.quantity || 0)) {
-      showToast(language === "ar" ? "الكمية المتاحة من هذا المنتج خلصت." : "This product is out of stock.", "error");
-      return;
-    }
-    existing ? existing.quantity++ : cart.push({ ...product, quantity: 1 });
-    updateCart();
-    toggleCart(true);
+    addProductToCart(product);
+    return;
+  }
+  if (event.target.closest(".product-details-trigger")) {
+    const card = event.target.closest(".product-card[data-product-id]");
+    const product = products.find((item) => String(item.id || products.indexOf(item)) === card?.dataset.productId) || products[Number(card?.dataset.productId)];
+    if (product) showProductDetails(product);
+    return;
+  }
+  const productCard = event.target.closest(".product-card[data-product-id]");
+  if (productCard && !event.target.closest("button, a, input")) {
+    const product = products.find((item) => String(item.id || products.indexOf(item)) === productCard.dataset.productId) || products[Number(productCard.dataset.productId)];
+    if (product) showProductDetails(product);
   }
 
   if (event.target.closest(".checkout")) {

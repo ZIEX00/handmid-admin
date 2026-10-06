@@ -42,6 +42,7 @@ function addToCart(product) {
   existing ? existing.quantity++ : cart.push({ ...product, quantity: 1 });
   localStorage.setItem("handmade-cart", JSON.stringify(cart));
   showToast("تمت إضافة المنتج إلى السلة");
+  return true;
 }
 function renderCatalog() {
   const info = categoryInfo[category] || categoryInfo.Crochet;
@@ -54,7 +55,7 @@ function renderCatalog() {
     return matchesCategory && (!searchTerm || name.includes(searchTerm.toLowerCase()));
   });
   document.querySelector("#catalog-grid").innerHTML = visibleProducts.length
-    ? visibleProducts.map((product) => `<article class="product-card"><img src="${product.image}" alt="${product.name_ar || product.name}" loading="lazy"><div class="product-info"><h3>${product.name_ar || product.name}</h3><strong class="price">جنيه ${product.price}</strong><button class="button dark catalog-add" data-id="${product.id}" type="button"><span>أضف للسلة</span><span>+</span></button></div></article>`).join("")
+    ? visibleProducts.map((product) => `<article class="product-card" data-product-id="${product.id}"><img src="${product.image}" alt="${product.name_ar || product.name}" loading="lazy"><div class="product-info"><h3>${product.name_ar || product.name}</h3><strong class="price">جنيه ${product.price}</strong><button class="product-details-trigger" type="button">عرض التفاصيل</button><button class="button dark catalog-add" data-id="${product.id}" type="button"><span>أضف للسلة</span><span>+</span></button></div></article>`).join("")
     : '<div class="catalog-empty">لا توجد موديلات في هذا التصنيف حاليًا.</div>';
 }
 
@@ -64,9 +65,37 @@ document.querySelector("#catalog-search").addEventListener("input", (event) => {
 });
 document.querySelector("#catalog-grid").addEventListener("click", (event) => {
   const button = event.target.closest(".catalog-add");
-  if (!button) return;
-  const product = products.find((item) => String(item.id) === button.dataset.id);
-  if (product) addToCart(product);
+  if (button) {
+    const product = products.find((item) => String(item.id) === button.dataset.id);
+    if (product) addToCart(product);
+    return;
+  }
+  if (event.target.closest(".product-details-trigger")) {
+    const card = event.target.closest(".product-card[data-product-id]");
+    const product = products.find((item) => String(item.id) === card?.dataset.productId);
+    if (product) {
+      window.openProductDetails(product, {
+        language: "ar",
+        currency: "جنيه",
+        addLabel: "أضف للسلة",
+        closeLabel: "إغلاق",
+        onAdd: () => addToCart(product),
+      });
+    }
+    return;
+  }
+  const card = event.target.closest(".product-card[data-product-id]");
+  if (!card) return;
+  const product = products.find((item) => String(item.id) === card.dataset.productId);
+  if (product) {
+    window.openProductDetails(product, {
+      language: "ar",
+      currency: "جنيه",
+      addLabel: "أضف للسلة",
+      closeLabel: "إغلاق",
+      onAdd: () => addToCart(product),
+    });
+  }
 });
 products = getProducts();
 renderCatalog();

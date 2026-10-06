@@ -510,6 +510,7 @@ async function handleProductSubmit(event) {
     price: Number(formData.get('price') || 0),
     stock: Number(formData.get('stock') || 0),
     image: String(formData.get('image') || '').trim(),
+    images: String(formData.get('images') || '').split(/[\n,]+/).map((image) => image.trim()).filter(Boolean),
     description: String(formData.get('description') || '').trim(),
     is_active: true,
   };
