@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Handmade pieces, crafted with care." />
+    <title>HANDMADE | Small things, big stories</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="icon" type="image/x-icon" href="logos/d8c85763-451f-4025-b596-387877ba0baf.png" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <div class="announcement" data-i18n="announcement">
+      Free delivery on orders over EGP 800 <span>•</span> Made by hand in Egypt
+    </div>
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="Handmade home"
+        ><span class="brand-mark img"><img src="logos/d8c85763-451f-4025-b596-387877ba0baf.png" alt=""></span
+        ><span
+          ><strong>HANDMADE</strong
+          ><small>Small things, big stories.</small></span
+        ></a
+      >
+      <nav class="desktop-nav" id="main-nav" aria-label="Main navigation">
+        <a class="active" href="#home" data-i18n="home">Home</a><a href="#shop" data-i18n="shop">Shop</a
+        ><a href="#categories" data-i18n="categories">Categories</a><a href="custom-orders.html" data-i18n="customOrders">Custom Orders</a
+        ><a href="#about" data-i18n="about">About</a><a href="#contact" data-i18n="contact">Contact</a>
+        <a href="track-order.html" data-i18n="trackOrder">Track Order</a>
+      </nav>
+      <div class="header-actions">
+        <button class="language-toggle" data-action="language" aria-label="Switch language">عربي</button>
+        <button aria-label="Search"><i data-lucide="search"></i></button
+        ><button aria-label="Favorites" data-action="favorites"><i data-lucide="heart"></i></button
+        ><button
+          class="cart-button"
+          aria-label="Shopping bag"
+          data-action="cart"
+        >
+          <i data-lucide="shopping-bag"></i><b id="cart-count">0</b></button
+        ><button class="menu-button" type="button" aria-label="Open menu" aria-controls="main-nav" aria-expanded="false">
+          <i data-lucide="menu"></i>
+        </button>
+      </div>
+    </header>
+    <main id="home">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow" data-i18n="heroEyebrow">HANDMADE WITH LOVE</p>
+          <h1 data-i18n="heroTitle">Made by Hand.<br />Made for You.</h1>
+          <p data-i18n="heroDescription">
+            Unique crochet pieces, beautiful beadwork and handmade accessories —
+            crafted with care, just for you.
+          </p>
+          <a class="button dark" href="#shop"><span data-i18n="shopCollection">Shop Collection</span> <span>→</span></a>
+        </div>
+        <div class="hero-dots">
+          <span class="selected"></span><span></span><span></span><span></span
+          ><span>›</span>
+        </div>
+      </section>
+      <section class="section categories" id="categories">
+        <div class="section-heading">
+          <h2 data-i18n="shopByCategory">Shop by Category</h2>
+          <a href="#shop"><span data-i18n="viewAll">View All</span> <span>→</span></a>
+        </div>
+        <div class="category-grid" id="category-grid"></div>
+      </section>
+      <section class="section story-section" id="story">
+        <div class="story-copy">
+          <p class="eyebrow" data-i18n="storyEyebrow">OUR STORY</p>
+          <h2 data-i18n="storyTitle">Crafted slowly, made to feel personal.</h2>
+          <p data-i18n="storyDescription">
+            Each handmade piece begins with an idea, a color palette, and a lot of love.
+            We design crochet, beadwork, and accessories that feel warm, wearable, and unique.
+          </p>
+          <div class="story-points">
+            <div>
+              <strong data-i18n="smallBatch">Small batch</strong>
+              <span data-i18n="smallBatchDescription">Thoughtfully made in limited runs.</span>
+            </div>
+            <div>
+              <strong data-i18n="giftReady">Gift-ready</strong>
+              <span data-i18n="giftReadyDescription">Beautiful packaging for every order.</span>
+            </div>
+          </div>
+        </div>
+        <div class="story-gallery" aria-label="Handmade product gallery">
+          <img class="tall" src="logos/handmade_crochet_banner.png" alt="Crochet handmade product" loading="lazy" />
+          <img class="wide" src="logos/crochet.png" alt="Handmade crochet item" loading="lazy" />
+          <img class="small" src="logos/Keychains.png" alt="Keychain product" loading="lazy" />
+          <div class="story-badge" data-i18n="madeInEgypt">Made in Egypt</div>
+        </div>
+      </section>
+      <section class="section products-section" id="shop">
+        <div class="section-heading">
+          <h2 data-i18n="featuredProducts">Featured Products</h2>
+          <a href="#shop"><span data-i18n="viewAll">View All</span> <span>→</span></a>
+        </div>
+        <div class="shop-controls">
+          <label class="search-box" aria-label="Search products">
+            <i data-lucide="search"></i>
+            <input id="product-search" type="search" placeholder="ابحث باسم المنتج" />
+          </label>
+          <div class="filter-pills" id="filter-pills" aria-label="Product categories"></div>
+        </div>
+        <div class="product-grid" id="product-grid">
+          <div class="loading">Loading handmade pieces...</div>
+        </div>
+      </section>
+      <section class="custom-banner" id="custom">
+        <div>
+          <p class="eyebrow" data-i18n="customOrders">CUSTOM ORDERS</p>
+          <h2 data-i18n="yourIdea">Your Idea, Handmade.</h2>
+          <p data-i18n="customDescription">
+            Want something special? Choose your colors, size and style — and
+            we’ll create it just for you.
+          </p>
+          <a class="button light" href="#contact"
+            ><span data-i18n="requestOrder">Request Custom Order</span> <span>→</span></a
+          >
+        </div>
+        <div class="style-picker">
+          <small data-i18n="chooseStyle">Choose Your Style</small>
+          <div class="swatches"><i></i><i></i><i></i><i></i><i></i></div>
+          <ul>
+            <li data-i18n="bracelets">◌ Bracelets</li>
+            <li data-i18n="necklaces">◌ Necklaces</li>
+            <li data-i18n="keychains">◌ Keychains</li>
+            <li data-i18n="crochetItems">◌ Crochet Items</li>
+          </ul>
+        </div>
+        <div class="custom-photo"></div>
+      </section>
+      <section class="section testimonials" id="about">
+        <div class="section-heading">
+          <h2 data-i18n="customerReviews">What Our Customers Say</h2>
+          <a href="#about"><span data-i18n="viewReviews">View All Reviews</span> <span>→</span></a>
+        </div>
+        <div class="review-grid" id="review-grid"></div>
+        <form class="review-form" id="review-form">
+          <h3 data-i18n="writeReview">شاركنا رأيك</h3>
+          <div class="review-form-fields">
+            <input name="name" type="text" placeholder="اسمك" data-review-placeholder="name" required />
+            <select name="rating" aria-label="التقييم">
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★</option>
+              <option value="3">★★★</option>
+              <option value="2">★★</option>
+              <option value="1">★</option>
+            </select>
+            <textarea name="text" rows="3" placeholder="اكتب رأيك في تجربتك معنا" data-review-placeholder="text" required></textarea>
+            <button class="button dark" type="submit"><span data-i18n="sendReview">إرسال الرأي</span><span>→</span></button>
+          </div>
+        </form>
+      </section>
+      <section class="contact-section" id="contact">
+        <div class="contact-copy">
+          <p class="eyebrow" data-i18n="contactEyebrow">LET'S TALK</p>
+          <h2 data-i18n="contactTitle">A little question? We're here.</h2>
+          <p data-i18n="contactDescription">Message us about an order, a custom idea, or anything you'd like to know.</p>
+        </div>
+        <div class="contact-action">
+          <a class="contact-whatsapp" href="https://wa.me/201125935705" data-whatsapp-message="contact" target="_blank" rel="noopener noreferrer">
+            <i data-lucide="message-circle"></i>
+            <span data-i18n="whatsappUs">Chat with us on WhatsApp</span>
+          </a>
+          <a class="contact-number" href="https://wa.me/201125935705" target="_blank" rel="noopener noreferrer">+20 11 2593 5705</a>
+        </div>
+      </section>
+      <section class="instagram" id="instagram">
+        <div class="section-heading">
+          <h2 data-i18n="followUs">Follow Us @handmaid_00</h2>
+          <a href="https://www.instagram.com/handmaid_00?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw=="><span data-i18n="moreInstagram">More on Instagram</span> <span>→</span></a>
+        </div>
+        <div class="insta-grid">
+          <img
+            src="logos/crochet.png"
+            alt="Handmade crochet"
+            loading="lazy"
+            decoding="async"
+          /><img
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBQu9ji9A50HLihKkukhWl06Za7SVLPHXKu1DTyJ3v5-e9r3_bfx5MPN0&s=10"
+            alt="Beaded jewelry"
+            loading="lazy"
+            decoding="async"
+          /><img
+            src="https://joumla-eg.com/wp-content/uploads/2025/09/d5f45c0b1d92b63f5a638ba7e3cf0b73.jpg"
+            alt="Jewelry"
+            loading="lazy"
+            decoding="async"
+          /><img
+            src="https://www.cotzl.com/uploads/products/t/p-2759-p-9444.jpg"
+            alt="Handmade bracelet"
+            loading="lazy"
+            decoding="async"
+          /><img
+            src="https://i.pinimg.com/474x/be/59/03/be59031faee802ada8685f69e1292c83.jpg"
+            alt="Colorful beads"
+            loading="lazy"
+            decoding="async"
+          />
+          <div class="insta-note">Good<br />Things<br />Take Time</div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <a class="brand" href="#home"
+        ><span class="brand-mark">✳</span
+        ><span
+          ><strong>HANDMADE</strong
+          ><small>Small things, big stories.</small></span
+        ></a
+      >
+      <nav>
+        <a href="#home" data-i18n="home">Home</a><a href="#shop" data-i18n="shop">Shop</a
+        ><a href="#categories" data-i18n="categories">Categories</a><a href="custom-orders.html" data-i18n="customOrders">Custom Orders</a
+        ><a href="#about" data-i18n="about">About</a><a href="#contact" data-i18n="contact">Contact</a>
+      </nav>
+      
+      <p>© 2025 Handmade. All rights reserved.</p>
+    </footer>
+    <aside class="cart-drawer" id="cart-drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <h2 data-i18n="yourBag">Your Bag</h2>
+        <button data-action="close-cart" aria-label="Close bag">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div id="cart-items">
+        <p class="empty-cart" data-i18n="emptyCart">Your bag is waiting for something special.</p>
+      </div>
+      <div class="cart-total">
+        <span data-i18n="total">Total</span><strong id="cart-total">EGP 0</strong>
+      </div>
+      <form class="checkout-form" id="checkout-form">
+        <label>
+          <span data-i18n="nameLabel">Name</span>
+          <input type="text" name="name" placeholder="اسمك" required />
+        </label>
+        <label>
+          <span data-i18n="phoneLabel">Phone</span>
+          <input type="tel" name="phone" placeholder="01xxxxxxxxx" required />
+        </label>
+        <label>
+          <span data-i18n="noteLabel">Order note</span>
+          <textarea name="note" rows="3" placeholder="اكتب الألوان أو أي تفاصيل تفضلها"></textarea>
+        </label>
+        <button class="button dark submit-order" type="submit"><span data-i18n="placeOrder">Place Order</span> <span>→</span></button>
+      </form>
+      <button class="button dark checkout"><span data-i18n="checkout">Checkout</span> <span>→</span></button>
+    </aside>
+    <div class="overlay" data-action="close-cart"></div>
+    <a class="whatsapp-float" href="https://wa.me/201125935705" data-whatsapp-message="customOrder" aria-label="Chat on WhatsApp" target="_blank" rel="noopener noreferrer">
+      <i data-lucide="message-circle"></i>
+    </a>
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <script src="product-details.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

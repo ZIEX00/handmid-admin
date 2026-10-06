@@ -51,6 +51,7 @@ async function renderInvoice() {
       <strong>بيانات العميل</strong>
       <span>الاسم: ${escapeHtml(order.customer_name || order.name || 'غير متوفر')}</span>
       <span>الهاتف: ${escapeHtml(order.phone || 'غير متوفر')}</span>
+      <span>العنوان: ${escapeHtml(order.address || 'غير متوفر')}</span>
     </section>
     <table>
       <thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
