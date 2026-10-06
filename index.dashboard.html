@@ -175,6 +175,41 @@
         background: #fff;
         padding: 10px 12px;
       }
+      .invoice-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .invoice-form input,
+      .invoice-form select,
+      .invoice-form textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 12px;
+      }
+      .invoice-form .wide { grid-column: 1 / -1; }
+      .invoice-items {
+        display: grid;
+        gap: 10px;
+      }
+      .invoice-item-row {
+        display: grid;
+        grid-template-columns: 1.1fr 1.4fr 0.7fr 0.6fr auto;
+        gap: 8px;
+        align-items: end;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+      .invoice-total-preview {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 700;
+        padding: 12px 0;
+        border-top: 1px solid var(--line);
+      }
       .table-wrap {
         overflow-x: auto;
       }
@@ -310,6 +345,7 @@
         .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .panel-grid { grid-template-columns: 1fr; }
         .product-form { grid-template-columns: 1fr; }
+        .invoice-item-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
       @media (max-width: 600px) {
         .dashboard { padding: 16px 10px 30px; }
@@ -323,6 +359,9 @@
         .panel { padding: 14px 12px; border-radius: 16px; }
         .panel h2 { font-size: 18px; margin-bottom: 14px; }
         .product-form { gap: 10px; }
+        .invoice-form { grid-template-columns: 1fr; gap: 10px; }
+        .invoice-form .wide { grid-column: auto; }
+        .invoice-item-row { grid-template-columns: 1fr; }
         .table-wrap { margin: 0 -4px; }
         th, td { padding: 10px 7px; font-size: 10px; white-space: nowrap; }
         .product-image { width: 42px; height: 42px; }
@@ -382,6 +421,37 @@
         </div>
       </section>
 
+      <section class="panel" style="margin-bottom: 20px;">
+        <h2>إنشاء فاتورة</h2>
+        <form id="invoice-form" class="invoice-form">
+          <div class="field">
+            <label for="invoice-customer-name">اسم العميل</label>
+            <input id="invoice-customer-name" name="customer_name" type="text" required />
+          </div>
+          <div class="field">
+            <label for="invoice-customer-phone">رقم الهاتف</label>
+            <input id="invoice-customer-phone" name="phone" type="tel" />
+          </div>
+          <div class="field wide">
+            <label>بنود الفاتورة</label>
+            <div id="invoice-items" class="invoice-items"></div>
+            <button class="secondary-btn" id="add-invoice-item" type="button" style="margin-top: 10px;">إضافة بند</button>
+          </div>
+          <div class="invoice-total-preview wide">
+            <span>الإجمالي</span>
+            <span id="invoice-total">0 جنيه</span>
+          </div>
+          <div class="field wide">
+            <label for="invoice-notes">ملاحظات</label>
+            <textarea id="invoice-notes" name="notes" rows="2"></textarea>
+          </div>
+          <div class="wide">
+            <button class="primary-btn" id="save-invoice" type="submit">حفظ الفاتورة</button>
+            <p id="invoice-message" class="message" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+
       <main class="panel-grid">
         <section class="panel">
           <h2>إضافة منتج</h2>
@@ -414,6 +484,10 @@
             <div class="field">
               <label for="product-image">رابط الصورة</label>
               <input id="product-image" name="image" type="url" placeholder="https://..." required />
+            </div>
+            <div class="field wide">
+              <label for="product-extra-images">روابط صور إضافية (افصل بينها بفاصلة أو سطر جديد)</label>
+              <textarea id="product-extra-images" name="images" rows="2" placeholder="https://...&#10;https://..."></textarea>
             </div>
             <div class="field wide">
               <label for="product-description">الوصف</label>
