@@ -616,6 +616,7 @@ async function handleInvoiceSubmit(event) {
   const payload = {
     customer_name: String(formData.get('customer_name') || '').trim(),
     phone: String(formData.get('phone') || '').trim(),
+    address: String(formData.get('address') || '').trim(),
     notes: String(formData.get('notes') || '').trim(),
     total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
     status: 'confirmed',

@@ -20,11 +20,15 @@ create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   customer_name text not null,
   phone text,
+  address text,
   notes text,
   total numeric not null default 0,
   status text not null default 'pending',
   created_at timestamptz not null default now()
 );
+
+alter table public.orders
+  add column if not exists address text;
 
 -- 3) Order items table
 create table if not exists public.order_items (
