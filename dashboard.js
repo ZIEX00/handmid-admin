@@ -28,6 +28,7 @@ let products = [];
 let orders = [];
 let customRequests = [];
 let reviews = [];
+let editingProductId = null;
 
 function setAuthMessage(text, type = 'error') {
   authMessage.textContent = text;
@@ -269,6 +270,7 @@ function renderProductsTable() {
           <td>
             <div class="inventory-actions">
               <button class="table-action" data-action="save-stock" data-product-id="${product.id}" type="button">حفظ</button>
+              <button class="table-action" data-action="edit-product" data-product-id="${product.id}" type="button">تعديل</button>
               <button class="table-action delete" data-action="delete-product" data-product-id="${product.id}" type="button">حذف</button>
             </div>
           </td>
@@ -498,6 +500,33 @@ async function deleteProduct(productId) {
   setAuthMessage('تم حذف المنتج.', 'success');
 }
 
+function startProductEdit(productId) {
+  const product = products.find((item) => String(item.id) === String(productId));
+  if (!product) return;
+
+  editingProductId = product.id;
+  productForm.elements.namedItem('name').value = product.name || '';
+  productForm.elements.namedItem('name_ar').value = product.name_ar || '';
+  productForm.elements.namedItem('category').value = product.category || 'Crochet';
+  productForm.elements.namedItem('price').value = Number(product.price || 0);
+  productForm.elements.namedItem('stock').value = Number(product.stock || 0);
+  productForm.elements.namedItem('image').value = product.image || '';
+  productForm.elements.namedItem('images').value = Array.isArray(product.images) ? product.images.join('\n') : (product.images || '');
+  productForm.elements.namedItem('description').value = product.description || '';
+  document.querySelector('#product-form-title').textContent = 'تعديل المنتج';
+  document.querySelector('#save-product').textContent = 'حفظ التعديلات';
+  document.querySelector('#cancel-product-edit').classList.remove('hidden');
+  productForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function resetProductForm() {
+  editingProductId = null;
+  productForm.reset();
+  document.querySelector('#product-form-title').textContent = 'إضافة منتج';
+  document.querySelector('#save-product').textContent = 'حفظ المنتج';
+  document.querySelector('#cancel-product-edit').classList.add('hidden');
+}
+
 function renderStats() {
   document.querySelector('#product-count').textContent = String(products.length);
   document.querySelector('#order-count').textContent = String(orders.length);
@@ -682,37 +711,42 @@ async function handleProductSubmit(event) {
     image: String(formData.get('image') || '').trim(),
     images: String(formData.get('images') || '').split(/[\n,]+/).map((image) => image.trim()).filter(Boolean),
     description: String(formData.get('description') || '').trim(),
-    is_active: true,
   };
 
-  if (!payload.name || !payload.image) {
+  if (!payload.name || !payload.image || !Number.isFinite(payload.price) || payload.price < 0
+    || !Number.isInteger(payload.stock) || payload.stock < 0) {
+    setAuthMessage('تأكد من إدخال اسم وصورة وسعر وكمية صحيحة للمنتج.', 'error');
     return;
   }
 
+  const isEditing = editingProductId !== null;
   if (!handmadeSupabase) {
-    const updatedProducts = [{
-      ...payload,
-      id: Date.now(),
-      created_at: new Date().toISOString(),
-    }, ...products];
+    const updatedProducts = !isEditing
+      ? [{ ...payload, is_active: true, id: Date.now(), created_at: new Date().toISOString() }, ...products]
+      : products.map((product) => String(product.id) === String(editingProductId) ? { ...product, ...payload } : product);
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(updatedProducts));
     localStorage.setItem(PRODUCTS_KEY_FALLBACK, JSON.stringify(updatedProducts));
     products = updatedProducts;
     renderProductsTable();
     renderStats();
-    productForm.reset();
+    refreshInvoiceProductOptions();
+    resetProductForm();
+    setAuthMessage(isEditing ? 'تم تحديث المنتج.' : 'تم حفظ المنتج.', 'success');
     return;
   }
 
-  const { error } = await handmadeSupabase.from('products').insert([payload]);
+  const { error } = isEditing
+    ? await handmadeSupabase.from('products').update(payload).eq('id', editingProductId)
+    : await handmadeSupabase.from('products').insert([{ ...payload, is_active: true }]);
   if (error) {
-    setAuthMessage(`تعذر حفظ المنتج: ${error.message}`, 'error');
+    setAuthMessage(`تعذر ${isEditing ? 'تحديث' : 'حفظ'} المنتج: ${error.message}`, 'error');
     return;
   }
 
-  productForm.reset();
+  resetProductForm();
   await loadProducts();
   renderStats();
+  setAuthMessage(isEditing ? 'تم تحديث المنتج.' : 'تم حفظ المنتج.', 'success');
 }
 
 loginForm.addEventListener('submit', handleLogin);
@@ -750,6 +784,9 @@ productsTable.addEventListener('click', (event) => {
   const action = event.target.closest('[data-action]');
   if (!action) return;
   const productId = action.dataset.productId;
+  if (action.dataset.action === 'edit-product') {
+    startProductEdit(productId);
+  }
   if (action.dataset.action === 'delete-product') {
     deleteProduct(productId);
   }
@@ -758,6 +795,7 @@ productsTable.addEventListener('click', (event) => {
     updateProductStock(productId, input?.value);
   }
 });
+document.querySelector('#cancel-product-edit').addEventListener('click', resetProductForm);
 customRequestsList.addEventListener('change', (event) => {
   if (event.target.matches('.custom-request-status')) {
     updateCustomRequestStatus(event.target.dataset.requestId, event.target.value);
@@ -777,8 +815,8 @@ reviewsList.addEventListener('click', (event) => {
 });
 
 window.addEventListener('storage', (event) => {
-  if (event.key === ORDER_KEY && !handmadeSupabase) {
-    loadOrders();
+  if (event.key === ORDER_KEY) {
+    Promise.all([loadProducts(), loadOrders()]).then(renderStats);
   }
 });
 

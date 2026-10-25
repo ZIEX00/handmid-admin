@@ -82,22 +82,102 @@ create policy "Authenticated users can manage order items"
 alter table public.orders
   add column if not exists items jsonb not null default '[]'::jsonb;
 
-drop policy if exists "Public can submit orders" on public.orders;
-create policy "Public can submit orders"
-  on public.orders for insert
-  to anon
-  with check (
-    char_length(trim(customer_name)) > 0
-    and total >= 0
-    and jsonb_typeof(items) = 'array'
-  );
 drop policy if exists "Authenticated users can delete orders" on public.orders;
 create policy "Authenticated users can delete orders"
   on public.orders for delete
   to authenticated
   using (auth.role() = 'authenticated');
-grant insert on public.orders to anon;
-grant select, update, delete on public.orders to authenticated;
+grant select, insert, update, delete on public.orders to authenticated;
+drop policy if exists "Public can submit orders" on public.orders;
+revoke insert on public.orders from anon, public;
+
+create or replace function public.place_customer_order(
+  p_order_id uuid,
+  p_customer_name text,
+  p_phone text,
+  p_address text,
+  p_notes text,
+  p_items jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  input_item record;
+  product_row public.products%rowtype;
+  saved_items jsonb := '[]'::jsonb;
+  saved_order public.orders%rowtype;
+  order_total numeric := 0;
+begin
+  if coalesce(char_length(trim(p_customer_name)), 0) = 0
+    or coalesce(char_length(trim(p_phone)), 0) = 0
+    or coalesce(char_length(trim(p_address)), 0) = 0
+    or char_length(regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g')) < 8
+    or jsonb_typeof(p_items) is distinct from 'array'
+    or jsonb_array_length(p_items) = 0 then
+    raise exception 'بيانات الطلب غير مكتملة أو غير صحيحة.';
+  end if;
+
+  select * into saved_order from public.orders where id = p_order_id;
+  if found then
+    if regexp_replace(coalesce(saved_order.phone, ''), '[^0-9]', '', 'g')
+      <> regexp_replace(p_phone, '[^0-9]', '', 'g') then
+      raise exception 'رقم الطلب مستخدم بالفعل.';
+    end if;
+    return to_jsonb(saved_order);
+  end if;
+
+  for input_item in
+    select (value->>'product_id')::uuid as product_id,
+      sum((value->>'quantity')::integer)::integer as quantity
+    from jsonb_array_elements(p_items)
+    group by (value->>'product_id')::uuid
+    order by (value->>'product_id')::uuid
+  loop
+    if input_item.quantity < 1 then
+      raise exception 'الكمية المطلوبة غير صحيحة.';
+    end if;
+
+    select * into product_row
+    from public.products
+    where id = input_item.product_id and is_active = true
+    for update;
+
+    if not found then
+      raise exception 'أحد المنتجات المطلوبة لم يعد متاحًا.';
+    end if;
+    if product_row.stock < input_item.quantity then
+      raise exception 'الكمية المطلوبة من "%" غير متاحة.', coalesce(product_row.name_ar, product_row.name);
+    end if;
+
+    order_total := order_total + product_row.price * input_item.quantity;
+    saved_items := saved_items || jsonb_build_array(jsonb_build_object(
+      'id', product_row.id,
+      'name', product_row.name,
+      'name_ar', product_row.name_ar,
+      'price', product_row.price,
+      'quantity', input_item.quantity,
+      'image', product_row.image
+    ));
+
+    update public.products
+    set stock = stock - input_item.quantity
+    where id = product_row.id;
+  end loop;
+
+  insert into public.orders (id, customer_name, phone, address, notes, total, status, items)
+  values (p_order_id, trim(p_customer_name), trim(p_phone), trim(p_address),
+    nullif(trim(coalesce(p_notes, '')), ''), order_total, 'pending', saved_items)
+  returning * into saved_order;
+
+  return to_jsonb(saved_order);
+end;
+$$;
+
+revoke all on function public.place_customer_order(uuid, text, text, text, text, jsonb) from public;
+grant execute on function public.place_customer_order(uuid, text, text, text, text, jsonb) to anon, authenticated;
 
 create table if not exists public.custom_orders (
   id uuid primary key default gen_random_uuid(),
@@ -197,6 +277,8 @@ set search_path = public, pg_temp
 as $$
 declare
   matched_status text;
+  matched_order public.orders%rowtype;
+  order_item jsonb;
 begin
   if char_length(regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g')) < 8 then
     return null;
@@ -207,10 +289,18 @@ begin
   where id = p_order_id
     and status = 'pending'
     and regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g')
-  returning status into matched_status;
+  returning * into matched_order;
 
   if found then
-    return jsonb_build_object('cancelled', true, 'status', matched_status);
+    for order_item in select value from jsonb_array_elements(matched_order.items)
+    loop
+      if coalesce(order_item->>'id', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+        update public.products
+        set stock = stock + greatest(1, coalesce((order_item->>'quantity')::integer, 1))
+        where id = (order_item->>'id')::uuid;
+      end if;
+    end loop;
+    return jsonb_build_object('cancelled', true, 'status', matched_order.status);
   end if;
 
   select status into matched_status
@@ -233,10 +323,15 @@ grant execute on function public.cancel_customer_order(uuid, text) to anon, auth
 
 -- Optional: example product seed
 insert into public.products (name, name_ar, category, description, price, image, stock)
-values
+select seed.name, seed.name_ar, seed.category, seed.description, seed.price, seed.image, seed.stock
+from (values
   ('Crochet Flower Bag', 'حقيبة كروشيه بزهرة', 'Crochet', 'Soft and unique handmade crochet bag.', 650, 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80', 8),
   ('Beaded Lolly Bag', 'شنطة خرز لولي', 'Beadwork', 'Colorful handcrafted beadwork bag.', 180, 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=900&q=80', 12),
   ('Crochet Medallion', 'ميدالية كروشيه', 'Keychains', 'Handmade keychain with a cozy crochet finish.', 150, 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80', 25)
-on conflict do nothing;
+) as seed(name, name_ar, category, description, price, image, stock)
+where not exists (
+  select 1 from public.products existing
+  where existing.name = seed.name and existing.category = seed.category
+);
 
 notify pgrst, 'reload schema';

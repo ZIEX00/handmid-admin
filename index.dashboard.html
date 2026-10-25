@@ -458,7 +458,7 @@
 
       <main class="panel-grid">
         <section class="panel">
-          <h2>إضافة منتج</h2>
+          <h2 id="product-form-title">إضافة منتج</h2>
           <form id="product-form" class="product-form">
             <div class="field wide">
               <label for="product-name">اسم المنتج بالإنجليزية</label>
@@ -486,19 +486,20 @@
               <input id="product-stock" name="stock" type="number" min="0" step="1" value="10" required />
             </div>
             <div class="field">
-              <label for="product-image">رابط الصورة</label>
-              <input id="product-image" name="image" type="url" placeholder="https://..." required />
+              <label for="product-image">رابط الصورة أو مسارها</label>
+              <input id="product-image" name="image" type="text" placeholder="https://... أو logos/image.png" required />
             </div>
             <div class="field wide">
               <label for="product-extra-images">روابط صور إضافية (افصل بينها بفاصلة أو سطر جديد)</label>
               <textarea id="product-extra-images" name="images" rows="2" placeholder="https://...&#10;https://..."></textarea>
             </div>
             <div class="field wide">
-              <label for="product-description">الوصف</label>
-              <textarea id="product-description" name="description" rows="3" placeholder="Short description"></textarea>
+              <label for="product-description">الكابشن / الوصف</label>
+              <textarea id="product-description" name="description" rows="3" placeholder="اكتب وصف المنتج أو الكابشن"></textarea>
             </div>
             <div class="wide">
-              <button class="primary-btn" type="submit">حفظ المنتج</button>
+              <button class="primary-btn" id="save-product" type="submit">حفظ المنتج</button>
+              <button class="secondary-btn hidden" id="cancel-product-edit" type="button">إلغاء التعديل</button>
             </div>
           </form>
         </section>

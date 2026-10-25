@@ -33,11 +33,13 @@ const CART_KEY = "handmade-cart";
 const ORDER_KEY = "handmade-orders";
 const REVIEW_KEY = "handmade-reviews";
 const FAVORITES_KEY = "handmade-favorites";
+const PRODUCT_PREVIEW_LIMIT = 10;
 let products = fallbackProducts;
 let cart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
 let language = localStorage.getItem("handmade-language") || "en";
 let activeCategory = "all";
 let searchTerm = "";
+let showAllProducts = false;
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 }
@@ -70,23 +72,6 @@ function showOrderTrackingToast(orderId) {
     window.setTimeout(() => toast.remove(), 250);
   }, 15000);
 }
-function updateStoredInventory(items) {
-  const saved = localStorage.getItem("handmade-products");
-  if (!saved) return;
-  try {
-    const storedProducts = JSON.parse(saved);
-    if (!Array.isArray(storedProducts)) return;
-    const updatedProducts = storedProducts.map((product) => {
-      const orderedItem = items.find((item) => String(item.id) === String(product.id) || item.name === product.name);
-      if (!orderedItem) return product;
-      return { ...product, stock: Math.max(0, Number(product.stock || 0) - Number(orderedItem.quantity || 0)) };
-    });
-    localStorage.setItem("handmade-products", JSON.stringify(updatedProducts));
-    localStorage.setItem("handmade-products-demo", JSON.stringify(updatedProducts));
-  } catch (error) {
-    console.warn("Unable to update stored inventory", error);
-  }
-}
 function getFavoriteIds() {
   try {
     const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]");
@@ -101,6 +86,7 @@ function toggleFavorite(productId) {
   const nextIds = favoriteIds.includes(id) ? favoriteIds.filter((item) => item !== id) : [...favoriteIds, id];
   localStorage.setItem(FAVORITES_KEY, JSON.stringify(nextIds));
   renderProducts();
+  renderFavorites();
   showToast(nextIds.includes(id) ? (language === "ar" ? "تمت إضافة المنتج للمفضلة." : "Added to favorites.") : (language === "ar" ? "تمت إزالة المنتج من المفضلة." : "Removed from favorites."), "success");
 }
 const translations = {
@@ -108,13 +94,13 @@ const translations = {
     announcement: "Free delivery on orders over EGP 800 <span>•</span> Made by hand in Egypt",
     home: "Home", shop: "Shop", categories: "Categories", customOrders: "Custom Orders", about: "About", contact: "Contact", trackOrder: "Track Order", contactEyebrow: "LET'S TALK", contactTitle: "A little question? We're here.", contactDescription: "Message us about an order, a custom idea, or anything you'd like to know.", whatsappUs: "Chat with us on WhatsApp",
     heroEyebrow: "HANDMADE WITH LOVE", heroTitle: "Made by Hand.<br>Made for You.", heroDescription: "Unique crochet pieces, beautiful beadwork and handmade accessories — crafted with care, just for you.", shopCollection: "Shop Collection", shopByCategory: "Shop by Category", viewAll: "View All", featuredProducts: "Featured Products",
-    yourIdea: "Your Idea, Handmade.", customDescription: "Want something special? Choose your colors, size and style — and we’ll create it just for you.", requestOrder: "Request Custom Order", chooseStyle: "Choose Your Style", bracelets: "◌ Bracelets", necklaces: "◌ Necklaces", keychains: "◌ Keychains", crochetItems: "◌ Crochet Items", customerReviews: "What Our Customers Say", viewReviews: "View All Reviews", followUs: "Follow Us @handmade", moreInstagram: "More on Instagram", yourBag: "Your Bag", emptyCart: "Your bag is waiting for something special.", total: "Total", checkout: "Checkout", addToBag: "Add to bag", loading: "Loading handmade pieces...", currency: "EGP", storyEyebrow: "OUR STORY", storyTitle: "Crafted slowly, made to feel personal.", storyDescription: "Each handmade piece begins with an idea, a color palette, and a lot of love. We design crochet, beadwork, and accessories that feel warm, wearable, and unique.", smallBatch: "Small batch", smallBatchDescription: "Thoughtfully made in limited runs.", giftReady: "Gift-ready", giftReadyDescription: "Beautiful packaging for every order.", madeInEgypt: "Made in Egypt", nameLabel: "Name", phoneLabel: "Phone", noteLabel: "Order note", placeOrder: "Place Order", writeReview: "Share your review", sendReview: "Send review",
+    yourIdea: "Your Idea, Handmade.", customDescription: "Want something special? Choose your colors, size and style — and we’ll create it just for you.", requestOrder: "Request Custom Order", chooseStyle: "Choose Your Style", bracelets: "◌ Bracelets", necklaces: "◌ Necklaces", keychains: "◌ Keychains", crochetItems: "◌ Crochet Items", customerReviews: "What Our Customers Say", viewReviews: "View All Reviews", followUs: "Follow Us @handmade_egypt_1", moreInstagram: "More on Instagram", yourBag: "Your Bag", favorites: "Favorites", emptyFavorites: "You haven't saved any products yet.", removeFavorite: "Remove from favorites", openProduct: "View product", emptyCart: "Your bag is waiting for something special.", total: "Total", checkout: "Checkout", addToBag: "Add to bag", showMoreProducts: "Show remaining products", loading: "Loading handmade pieces...", currency: "EGP", storyEyebrow: "OUR STORY", storyTitle: "Crafted slowly, made to feel personal.", storyDescription: "Each handmade piece begins with an idea, a color palette, and a lot of love. We design crochet, beadwork, and accessories that feel warm, wearable, and unique.", smallBatch: "Small batch", smallBatchDescription: "Thoughtfully made in limited runs.", giftReady: "Gift-ready", giftReadyDescription: "Beautiful packaging for every order.", madeInEgypt: "Made in Egypt", nameLabel: "Name", phoneLabel: "Phone", addressLabel: "Delivery address", checkoutNote: "We will contact you to confirm delivery and payment. Delivery is free on orders over EGP 800.", noteLabel: "Order note", placeOrder: "Place Order", search: "Search", writeReview: "Share your review", sendReview: "Send review",
   },
   ar: {
     announcement: "توصيل مجاني للطلبات أكثر من ٨٠٠ جنيه <span>•</span> مصنوع يدويًا في مصر",
     home: "الرئيسية", shop: "المتجر", categories: "التصنيفات", customOrders: "طلبات خاصة", about: "عن Handmade", contact: "تواصل معنا", trackOrder: "تتبع طلبك", contactEyebrow: "احكيلنا", contactTitle: "عندك سؤال؟ إحنا موجودين.", contactDescription: "كلمينا عن طلبك، أو فكرتك لتصميم خاص، أو أي حاجة حابة تعرفيها.", whatsappUs: "راسلينا على واتساب",
     heroEyebrow: "مصنوع بحب", heroTitle: "صُنع يدويًا.<br>صُنع لك.", heroDescription: "قطع كروشيه مميزة، وإكسسوارات من الخرز مصنوعة يدويًا بعناية مخصوص عشانك.", shopCollection: "تسوق المجموعة", shopByCategory: "تسوق حسب التصنيف", viewAll: "عرض الكل", featuredProducts: "منتجات مميزة",
-    yourIdea: "فكرتك، بتنفيذ يدوي.", customDescription: "عايز حاجة مميزة؟ اختار الألوان والمقاس والشكل، وإحنا هننفذها مخصوص ليك.", requestOrder: "اطلب تصميم خاص", chooseStyle: "اختار الشكل", bracelets: "◌ أساور", necklaces: "◌ سلاسل", keychains: "◌ ميداليات", crochetItems: "◌ منتجات كروشيه", customerReviews: "آراء عملائنا", viewReviews: "عرض كل الآراء", followUs: "تابعنا @handmaid_00", moreInstagram: "المزيد على إنستجرام", yourBag: "سلتك", emptyCart: "سلتك مستنية حاجة مميزة.", total: "الإجمالي", checkout: "إتمام الطلب", addToBag: "أضف للسلة", loading: "جاري تحميل المنتجات...", currency: "جنيه", storyEyebrow: "حكايتنا", storyTitle: "مصنوع على مهله، ومخصوص عشانك.", storyDescription: "كل قطعة بتبدأ بفكرة وألوان متناسقة وحب كبير. بنصمم كروشيه ومشغولات خرز وإكسسوارات دافئة ومميزة وسهلة الاستخدام.", smallBatch: "كميات محدودة", smallBatchDescription: "مصنوعة بعناية وبأعداد قليلة.", giftReady: "جاهزة كهدية", giftReadyDescription: "تغليف جميل مع كل طلب.", madeInEgypt: "مصنوع في مصر", nameLabel: "الاسم", phoneLabel: "رقم الهاتف", noteLabel: "ملاحظات الطلب", placeOrder: "تأكيد الطلب", writeReview: "شاركنا رأيك", sendReview: "إرسال الرأي",
+    yourIdea: "فكرتك، بتنفيذ يدوي.", customDescription: "عايز حاجة مميزة؟ اختار الألوان والمقاس والشكل، وإحنا هننفذها مخصوص ليك.", requestOrder: "اطلب تصميم خاص", chooseStyle: "اختار الشكل", bracelets: "◌ أساور", necklaces: "◌ سلاسل", keychains: "◌ ميداليات", crochetItems: "◌ منتجات كروشيه", customerReviews: "آراء عملائنا", viewReviews: "عرض كل الآراء", followUs: "تابعنا @handmade_egypt_1", moreInstagram: "المزيد على إنستجرام", yourBag: "سلتك", favorites: "المفضلة", emptyFavorites: "لسه ما أضفتش منتجات للمفضلة.", removeFavorite: "إزالة من المفضلة", openProduct: "عرض المنتج", emptyCart: "سلتك مستنية حاجة مميزة.", total: "الإجمالي", checkout: "إتمام الطلب", addToBag: "أضف للسلة", showMoreProducts: "عرض باقي المنتجات", loading: "جاري تحميل المنتجات...", currency: "جنيه", storyEyebrow: "حكايتنا", storyTitle: "مصنوع على مهله، ومخصوص عشانك.", storyDescription: "كل قطعة بتبدأ بفكرة وألوان متناسقة وحب كبير. بنصمم كروشيه ومشغولات خرز وإكسسوارات دافئة ومميزة وسهلة الاستخدام.", smallBatch: "كميات محدودة", smallBatchDescription: "مصنوعة بعناية وبأعداد قليلة.", giftReady: "جاهزة كهدية", giftReadyDescription: "تغليف جميل مع كل طلب.", madeInEgypt: "مصنوع في مصر", nameLabel: "الاسم", phoneLabel: "رقم الهاتف", addressLabel: "عنوان التوصيل", checkoutNote: "هنتواصل معاك لتأكيد تفاصيل التوصيل وطريقة الدفع. التوصيل مجاني للطلبات فوق ٨٠٠ جنيه.", noteLabel: "ملاحظات الطلب", placeOrder: "تأكيد الطلب", search: "بحث", writeReview: "شاركنا رأيك", sendReview: "إرسال الرأي",
   },
 };
 const categories = [
@@ -186,14 +172,18 @@ function inferCategory(product) {
 function getVisibleProducts() {
   return products.filter((product) => {
     const safeCategory = inferCategory(product);
-    const productName = language === "ar" ? product.name_ar || product.name : product.name;
+    const productName = `${product.name_ar || ""} ${product.name || ""}`;
     const matchesCategory = activeCategory === "all" || safeCategory === activeCategory;
     const matchesSearch = !searchTerm || productName.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 }
+function getProductId(product) {
+  return String(product.id || products.indexOf(product));
+}
 function addProductToCart(product) {
-  const existing = cart.find((item) => item.name === product.name);
+  const existing = cart.find((item) => String(item.id) === String(product.id)
+    || (!item.id && item.name === product.name));
   const availableStock = Number(product.stock);
   if (Number.isFinite(availableStock) && availableStock <= (existing?.quantity || 0)) {
     showToast(language === "ar" ? "الكمية المتاحة من هذا المنتج خلصت." : "This product is out of stock.", "error");
@@ -215,36 +205,57 @@ function showProductDetails(product) {
 }
 function renderProducts() {
   const visibleProducts = getVisibleProducts();
+  const showMoreButton = document.querySelector("#show-more-products");
+  showMoreButton.hidden = visibleProducts.length <= PRODUCT_PREVIEW_LIMIT || showAllProducts;
+  showMoreButton.textContent = translations[language].showMoreProducts;
   if (!visibleProducts.length) {
     document.querySelector("#product-grid").innerHTML = `<div class="empty-state">${language === "ar" ? "لا توجد منتجات مطابقة للبحث." : "No products match your search."}</div>`;
     return;
   }
 
-  document.querySelector("#product-grid").innerHTML = visibleProducts
-    .map(
-      (product, index) =>
-        `<article class="product-card" data-product-id="${escapeHtml(product.id || index)}"><button class="heart ${getFavoriteIds().includes(String(product.id || index)) ? "active" : ""}" data-favorite-id="${escapeHtml(product.id || index)}" aria-label="Add ${escapeHtml(product.name)} to wishlist"><i data-lucide="heart"></i></button><img src="${escapeHtml(product.image)}" alt="${escapeHtml(language === "ar" ? product.name_ar || product.name : product.name)}" loading="lazy"><div class="product-info"><h3>${escapeHtml(language === "ar" ? product.name_ar || product.name : product.name)}</h3><strong class="price">${translations[language].currency} ${escapeHtml(product.price)}</strong><div class="stars">★★★★★ <small>(${index * 7 + 12})</small></div><button class="product-details-trigger" type="button">${language === "ar" ? "عرض التفاصيل" : "View details"}</button><button class="button dark add-to-cart" data-index="${escapeHtml(product.id || index)}" style="margin-top:10px;padding:8px 11px;width:100%"><span>${translations[language].addToBag}</span> <span>+</span></button></div></article>`,
-    )
+  const productsToRender = showAllProducts
+    ? visibleProducts
+    : visibleProducts.slice(0, PRODUCT_PREVIEW_LIMIT);
+  document.querySelector("#product-grid").innerHTML = productsToRender
+    .map((product, index) => {
+      const productId = getProductId(product);
+      const name = language === "ar" ? product.name_ar || product.name : product.name;
+      return `<article class="product-card" data-product-id="${escapeHtml(productId)}"><button class="heart ${getFavoriteIds().includes(productId) ? "active" : ""}" data-favorite-id="${escapeHtml(productId)}" aria-label="${language === "ar" ? "أضف إلى المفضلة" : "Add to favorites"}"><i data-lucide="heart"></i></button><img src="${escapeHtml(product.image)}" alt="${escapeHtml(name)}" loading="lazy"><div class="product-info"><h3>${escapeHtml(name)}</h3><strong class="price">${translations[language].currency} ${escapeHtml(product.price)}</strong><button class="product-details-trigger" type="button">${language === "ar" ? "عرض التفاصيل" : "View details"}</button><button class="button dark add-to-cart" data-index="${escapeHtml(productId)}" style="margin-top:10px;padding:8px 11px;width:100%"><span>${translations[language].addToBag}</span> <span>+</span></button></div></article>`;
+    })
     .join("");
   lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+}
+function renderFavorites() {
+  const favoritesList = document.querySelector("#favorites-items");
+  if (!favoritesList) return;
+  const favoriteProducts = getFavoriteIds()
+    .map((favoriteId) => products.find((product) => getProductId(product) === favoriteId))
+    .filter(Boolean);
+  favoritesList.innerHTML = favoriteProducts.length
+    ? favoriteProducts.map((product) => {
+      const productId = getProductId(product);
+      const name = language === "ar" ? product.name_ar || product.name : product.name;
+      return `<article class="favorite-item">
+        <button class="favorite-product-link" type="button" data-open-favorite="${escapeHtml(productId)}" aria-label="${escapeHtml(translations[language].openProduct)}: ${escapeHtml(name)}">
+          <img src="${escapeHtml(product.image)}" alt="">
+          <span><b>${escapeHtml(name)}</b><small>${translations[language].currency} ${escapeHtml(product.price)}</small></span>
+        </button>
+        <button class="favorite-remove" type="button" data-remove-favorite="${escapeHtml(productId)}" aria-label="${escapeHtml(translations[language].removeFavorite)}">×</button>
+      </article>`;
+    }).join("")
+    : `<p class="empty-cart">${translations[language].emptyFavorites}</p>`;
 }
 function getReviews() {
   const saved = localStorage.getItem(REVIEW_KEY);
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return parsed.filter((review) => !String(review.id).startsWith("seed-"));
     } catch (error) {
       console.warn("Invalid saved reviews", error);
     }
   }
-  const initialReviews = [
-    { id: "seed-sara", name: "Sara Ahmed", rating: 5, text: "The bag is even more beautiful in real life. I’m in love with my new necklace!", status: "approved" },
-    { id: "seed-omar", name: "Omar Khaled", rating: 5, text: "Fastest delivery and the packaging was so cute. The bracelet looks even better in real life!", status: "approved" },
-    { id: "seed-lina", name: "Lina Mostafa", rating: 5, text: "I ordered a custom keychain and it turned out perfect. The seller was really helpful and kind.", status: "approved" },
-  ];
-  localStorage.setItem(REVIEW_KEY, JSON.stringify(initialReviews));
-  return initialReviews;
+  return [];
 }
 async function renderReviews() {
   const reviewGrid = document.querySelector("#review-grid");
@@ -256,20 +267,14 @@ async function renderReviews() {
     });
     if (!response.ok) throw new Error(await response.text());
     const sharedReviews = await response.json();
-    if (sharedReviews.length) approvedReviews = sharedReviews;
+    approvedReviews = sharedReviews;
   } catch (error) {
-    console.warn("Shared reviews unavailable; showing saved starter reviews.", error);
+    console.warn("Shared reviews unavailable; showing approved saved reviews.", error);
   }
-  const arabicSeedReviews = {
-    "seed-sara": "الشنطة أجمل بكتير في الحقيقة، وأنا بحب السلسلة الجديدة!",
-    "seed-omar": "التوصيل كان سريع جدًا والتغليف جميل. السوار أحلى من الصور!",
-    "seed-lina": "طلبت ميدالية مخصوص وطلعت ممتازة. البائعة كانت متعاونة ولطيفة جدًا.",
-  };
   reviewGrid.innerHTML = approvedReviews.length
     ? approvedReviews.map((review, index) => {
-      const initials = review.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-      const reviewText = language === "ar" ? arabicSeedReviews[review.id] || review.text : review.text;
-      return `<article><div class="review-head"><span class="avatar ${index % 3 === 1 ? "peach" : index % 3 === 2 ? "green" : ""}">${escapeHtml(initials)}</span><span><b>${escapeHtml(review.name)}</b><em>${"★".repeat(Math.max(1, Math.min(5, Number(review.rating) || 5)))} </em></span></div><p>“${escapeHtml(reviewText)}”</p></article>`;
+      const initials = String(review.name || "").split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+      return `<article><div class="review-head"><span class="avatar ${index % 3 === 1 ? "peach" : index % 3 === 2 ? "green" : ""}">${escapeHtml(initials)}</span><span><b>${escapeHtml(review.name || "")}</b><em>${"★".repeat(Math.max(1, Math.min(5, Number(review.rating) || 5)))} </em></span></div><p>“${escapeHtml(review.text || "")}”</p></article>`;
     }).join("")
     : '<div class="empty-state">لا توجد آراء منشورة حتى الآن.</div>';
 }
@@ -292,9 +297,12 @@ function applyLanguage() {
   });
   document.querySelector(".language-toggle").textContent = language === "ar" ? "English" : "عربي";
   document.querySelector(".language-toggle").setAttribute("aria-label", language === "ar" ? "التبديل إلى الإنجليزية" : "التبديل إلى العربية");
+  document.querySelector("#favorites-button").setAttribute("aria-label", language === "ar" ? "المفضلة" : "Favorites");
+  document.querySelector('[data-action="search"]').setAttribute("aria-label", text.search);
   document.querySelector("#product-search").placeholder = language === "ar" ? "ابحث باسم المنتج" : "Search by product name";
   document.querySelector('input[name="name"]').placeholder = language === "ar" ? "اسمك" : "Your name";
-  document.querySelector('input[name="phone"]').placeholder = language === "ar" ? "01xxxxxxxxx" : "+966 5xx xxx xxx";
+  document.querySelector('input[name="phone"]').placeholder = language === "ar" ? "01xxxxxxxxx" : "+20 1x xxxx xxxx";
+  document.querySelector('input[name="address"]').placeholder = language === "ar" ? "المحافظة، المنطقة، العنوان بالتفصيل" : "City, area, and full street address";
   document.querySelector('textarea[name="note"]').placeholder = language === "ar" ? "اكتب الألوان أو أي تفاصيل تفضلها" : "Tell us your preferred colors or details";
   document.querySelector('[data-review-placeholder="name"]').placeholder = language === "ar" ? "اسمك" : "Your name";
   document.querySelector('[data-review-placeholder="text"]').placeholder = language === "ar" ? "اكتب رأيك في تجربتك معنا" : "Tell us about your experience";
@@ -302,47 +310,42 @@ function applyLanguage() {
   renderCategories();
   renderFilterPills();
   renderProducts();
+  renderFavorites();
   renderReviews();
   updateCart();
 }
 async function loadProducts() {
-  const localProducts = getLocalProducts();
-  if (localProducts !== null) {
-    products = localProducts.map((product) => ({
-      ...product,
-      category: inferCategory(product),
-      name_ar: product.name_ar || product.name,
-    }));
-    renderFilterPills();
-    renderProducts();
-    return;
-  }
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&is_active=eq.true`, {
       headers: {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
     });
-    if (response.ok) {
-      const remoteProducts = await response.json();
-      if (remoteProducts.length) {
-        products = remoteProducts.map((product) => ({
-          ...product,
-          category: inferCategory(product),
-          name_ar: product.name_ar || product.name,
-        }));
-      }
-      renderFilterPills();
-      renderProducts();
-    }
+    if (!response.ok) throw new Error(await response.text());
+    const remoteProducts = await response.json();
+    products = remoteProducts.filter((product) => product.is_active !== false).map((product) => ({
+      ...product,
+      category: inferCategory(product),
+      name_ar: product.name_ar || product.name,
+    }));
   } catch (error) {
-    console.warn(
-      "Supabase products unavailable; using fallback products.",
-      error,
-    );
+    console.warn("Supabase products unavailable; using saved products.", error);
+    const localProducts = getLocalProducts();
+    products = (localProducts?.length ? localProducts : fallbackProducts).filter((product) => product.is_active !== false).map((product) => ({
+      ...product,
+      category: inferCategory(product),
+      name_ar: product.name_ar || product.name,
+    }));
   }
+  cart = cart.map((item) => {
+    const currentProduct = products.find((product) => getProductId(product) === String(item.id));
+    return currentProduct ? { ...currentProduct, quantity: item.quantity } : item;
+  });
+  renderFilterPills();
+  renderProducts();
+  renderFavorites();
+  updateCart();
 }
 function saveCart() {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
@@ -350,7 +353,6 @@ function saveCart() {
 function updateCart() {
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const drawer = document.querySelector("#cart-drawer");
-  const checkoutButton = document.querySelector(".checkout");
   const checkoutForm = document.querySelector("#checkout-form");
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -385,16 +387,31 @@ function updateCart() {
     : `<p class="empty-cart">${translations[language].emptyCart}</p>`;
 
   drawer.classList.toggle("has-items", cart.length > 0);
-  checkoutButton.style.display = cart.length ? "block" : "none";
   checkoutForm.style.display = cart.length ? "grid" : "none";
   saveCart();
 }
 function toggleCart(open) {
-  document.querySelector("#cart-drawer").classList.toggle("open", open);
-  document.querySelector(".overlay").classList.toggle("open", open);
-  document
-    .querySelector("#cart-drawer")
-    .setAttribute("aria-hidden", String(!open));
+  const drawer = document.querySelector("#cart-drawer");
+  const favoritesDrawer = document.querySelector("#favorites-drawer");
+  drawer.classList.toggle("open", open);
+  drawer.setAttribute("aria-hidden", String(!open));
+  if (open) {
+    favoritesDrawer.classList.remove("open");
+    favoritesDrawer.setAttribute("aria-hidden", "true");
+  }
+  document.querySelector(".overlay").classList.toggle("open", open || favoritesDrawer.classList.contains("open"));
+}
+function toggleFavorites(open) {
+  const drawer = document.querySelector("#favorites-drawer");
+  const cartDrawer = document.querySelector("#cart-drawer");
+  if (open) renderFavorites();
+  drawer.classList.toggle("open", open);
+  drawer.setAttribute("aria-hidden", String(!open));
+  if (open) {
+    cartDrawer.classList.remove("open");
+    cartDrawer.setAttribute("aria-hidden", "true");
+  }
+  document.querySelector(".overlay").classList.toggle("open", open || cartDrawer.classList.contains("open"));
 }
 document.addEventListener("click", (event) => {
   const menuButton = event.target.closest(".menu-button");
@@ -414,15 +431,52 @@ document.addEventListener("click", (event) => {
     menuButton.setAttribute("aria-label", "Open menu");
   }
 
+  if (event.target.closest('[data-action="search"]')) {
+    document.querySelector("#shop").scrollIntoView({ behavior: "smooth" });
+    window.setTimeout(() => document.querySelector("#product-search").focus(), 350);
+    return;
+  }
+
   const favoriteButton = event.target.closest(".heart");
   if (favoriteButton) {
     toggleFavorite(favoriteButton.dataset.favoriteId);
     return;
   }
+  const openFavorite = event.target.closest("[data-open-favorite]");
+  if (openFavorite) {
+    const favoriteId = openFavorite.dataset.openFavorite;
+    const product = products.find((item) => getProductId(item) === favoriteId);
+    if (!product) return;
+    toggleFavorites(false);
+    activeCategory = "all";
+    searchTerm = "";
+    document.querySelector("#product-search").value = "";
+    showAllProducts = true;
+    renderFilterPills();
+    renderProducts();
+    requestAnimationFrame(() => {
+      const productCard = [...document.querySelectorAll(".product-card[data-product-id]")]
+        .find((card) => card.dataset.productId === favoriteId);
+      productCard?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return;
+  }
+  const removeFavorite = event.target.closest("[data-remove-favorite]");
+  if (removeFavorite) {
+    toggleFavorite(removeFavorite.dataset.removeFavorite);
+    return;
+  }
   const categoryButton = event.target.closest(".filter-pill");
   if (categoryButton) {
     activeCategory = categoryButton.dataset.category;
+    showAllProducts = false;
     renderFilterPills();
+    renderProducts();
+    return;
+  }
+
+  if (event.target.closest("#show-more-products")) {
+    showAllProducts = true;
     renderProducts();
     return;
   }
@@ -432,6 +486,7 @@ document.addEventListener("click", (event) => {
     const chosenCategory = categoryCard.dataset.category;
     if (chosenCategory) {
       activeCategory = chosenCategory;
+      showAllProducts = false;
       renderFilterPills();
       renderProducts();
       document.querySelector("#shop").scrollIntoView({ behavior: "smooth" });
@@ -440,7 +495,12 @@ document.addEventListener("click", (event) => {
 
   const action = event.target.closest("[data-action]")?.dataset.action;
   if (action === "cart") toggleCart(true);
-  if (action === "close-cart") toggleCart(false);
+  if (action === "favorites") {
+    toggleFavorites(true);
+    return;
+  }
+  if (action === "close-cart" || action === "close-drawers") toggleCart(false);
+  if (action === "close-favorites" || action === "close-drawers") toggleFavorites(false);
   const cartControl = event.target.closest("[data-cart-action]");
   if (cartControl) {
     const index = Number(cartControl.dataset.cartIndex);
@@ -460,10 +520,6 @@ document.addEventListener("click", (event) => {
     }
     updateCart();
     return;
-  }
-  if (action === "favorites") {
-    document.querySelector("#shop").scrollIntoView({ behavior: "smooth" });
-    showToast(language === "ar" ? "اختار علامة القلب لإضافة المنتجات للمفضلة." : "Use the heart icon on a product to save it to favorites.", "success");
   }
   if (action === "language") {
     language = language === "ar" ? "en" : "ar";
@@ -489,14 +545,11 @@ document.addEventListener("click", (event) => {
     if (product) showProductDetails(product);
   }
 
-  if (event.target.closest(".checkout")) {
-    if (!cart.length) return;
-    document.querySelector("#checkout-form").scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
 });
 document.addEventListener("input", (event) => {
   if (event.target.matches("#product-search")) {
     searchTerm = event.target.value.trim();
+    showAllProducts = false;
     renderProducts();
   }
 });
@@ -534,55 +587,66 @@ document.addEventListener("submit", async (event) => {
   if (event.target.matches("#checkout-form")) {
     event.preventDefault();
     if (!cart.length) return;
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (cart.some((item) => !uuidPattern.test(String(item.id || "")))) {
+      showToast(language === "ar"
+        ? "المنتجات غير متزامنة مع قاعدة البيانات. حدّث الصفحة وحاول مرة أخرى."
+        : "Products are not synced with the database. Refresh the page and try again.", "error");
+      return;
+    }
 
     const name = event.target.elements.name.value.trim() || "Customer";
     const phone = event.target.elements.phone.value.trim();
+    const address = event.target.elements.address.value.trim();
     const note = event.target.elements.note.value.trim();
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const order = {
-      id: crypto.randomUUID(),
-      customer_name: name,
-      phone,
-      notes: note,
-      items: cart,
-      total,
-      status: "pending",
-      created_at: new Date().toISOString(),
-      name,
-      note,
-      createdAt: new Date().toISOString(),
-    };
+    const orderId = crypto.randomUUID();
+    const submitButton = event.target.querySelector('[type="submit"]');
+    submitButton.disabled = true;
+    let order;
 
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/place_customer_order`, {
         method: "POST",
         headers: {
           apikey: SUPABASE_ANON_KEY,
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           "Content-Type": "application/json",
-          Prefer: "return=minimal",
         },
         body: JSON.stringify({
-          id: order.id,
-          customer_name: name,
-          phone,
-          notes: note,
-          items: cart,
-          total,
-          status: "pending",
+          p_order_id: orderId,
+          p_customer_name: name,
+          p_phone: phone,
+          p_address: address,
+          p_notes: note,
+          p_items: cart.map((item) => ({ product_id: item.id, quantity: Number(item.quantity) })),
         }),
       });
-      if (!response.ok) throw new Error(await response.text());
+      if (!response.ok) {
+        const details = await response.text();
+        const functionMissing = response.status === 404 || details.includes("place_customer_order");
+        throw new Error(functionMissing
+          ? (language === "ar" ? "خدمة تأكيد الطلب الآمن غير مفعلة. شغّل تحديث supabase-setup.sql ثم حاول مرة أخرى." : "Secure checkout is not enabled. Run the updated supabase-setup.sql, then try again.")
+          : details);
+      }
+      order = await response.json();
     } catch (error) {
       console.error("Unable to submit order to Supabase.", error);
-      showToast(language === "ar" ? "تعذر إرسال الطلب بسبب الاتصال. لم يتم تسجيله، تواصل معنا عبر واتساب." : "The order could not be sent. It was not recorded; please contact us on WhatsApp.", "error");
-      return;
+      showToast(language === "ar" ? `تعذر تسجيل الطلب: ${error.message || "تحقق من الاتصال وحاول مرة أخرى."}` : `Could not place the order: ${error.message || "check your connection and try again."}`, "error");
+    } finally {
+      submitButton.disabled = false;
     }
+    if (!order?.id) return;
 
     const orders = JSON.parse(localStorage.getItem(ORDER_KEY) || "[]");
-    orders.unshift(order);
+    orders.unshift({ ...order, name: order.customer_name, note: order.notes, createdAt: order.created_at });
     localStorage.setItem(ORDER_KEY, JSON.stringify(orders));
-    updateStoredInventory(cart);
+    products = products.map((product) => {
+      const purchasedQuantity = cart
+        .filter((item) => String(item.id) === String(product.id))
+        .reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+      return purchasedQuantity ? { ...product, stock: Math.max(0, Number(product.stock || 0) - purchasedQuantity) } : product;
+    });
+    renderProducts();
 
     cart = [];
     updateCart();
@@ -593,3 +657,4 @@ document.addEventListener("submit", async (event) => {
 });
 applyLanguage();
 loadProducts();
+if (new URLSearchParams(window.location.search).get("openCart") === "1") toggleCart(true);
