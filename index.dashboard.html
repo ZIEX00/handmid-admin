@@ -7,6 +7,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="dashboard.js" defer></script>
     <style>
+      @font-face {
+        font-family: "Zain Rounded";
+        src: url("fonts/ZainRounded-VF.ttf") format("truetype");
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+      }
       :root {
         --bg: #f6f0e7;
         --panel: #fffdfb;
@@ -319,8 +326,14 @@
       .custom-request-actions {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 8px;
         margin-top: 12px;
+      }
+      .custom-request-actions [data-action="create-custom-invoice"] {
+        border-color: var(--olive);
+        background: var(--olive);
+        color: #fff;
       }
       .custom-request-details {
         display: grid;
@@ -370,6 +383,24 @@
         .order-status { max-width: 110px; }
         .custom-request-actions { flex-wrap: wrap; }
         .table-action { min-height: 32px; }
+      }
+      [dir="rtl"] body,
+      [dir="rtl"] body * {
+        font-family: "Zain Rounded", sans-serif !important;
+      }
+      [dir="rtl"] body { font-size: 15px; }
+      [dir="rtl"] .field label,
+      [dir="rtl"] .stat-label,
+      [dir="rtl"] .order-status,
+      [dir="rtl"] .custom-request-details,
+      [dir="rtl"] .empty-state { font-size: 13px; }
+      [dir="rtl"] .message,
+      [dir="rtl"] .order-head,
+      [dir="rtl"] .review-admin-stars { font-size: 14px; }
+      @media (max-width: 600px) {
+        [dir="rtl"] th,
+        [dir="rtl"] td { font-size: 12px; }
+        [dir="rtl"] .stat-label { font-size: 11px; }
       }
     </style>
   </head>

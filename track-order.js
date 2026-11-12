@@ -6,11 +6,15 @@ const orderIdInput = document.querySelector("#order-id");
 const phoneInput = document.querySelector("#order-phone");
 const messageElement = document.querySelector("#tracking-message");
 const resultElement = document.querySelector("#tracking-result");
+const savedOrdersElement = document.querySelector("#saved-orders");
+const savedOrdersList = document.querySelector("#saved-orders-list");
 const language = localStorage.getItem("handmade-language") || "ar";
 const copy = {
   ar: {
     backToShop: "العودة للمتجر", eyebrow: "خدمة الطلبات", title: "تتبع طلبك",
     description: "اكتب رقم الطلب ورقم الهاتف المستخدم عند الشراء لمتابعة الحالة أو إلغاء الطلب قبل تأكيده.",
+    savedOrders: "طلباتك المحفوظة على هذا الجهاز", savedOrder: "طلب رقم", savedTotal: "قيمة المنتجات", invoice: "عرض الفاتورة", trackSaved: "متابعة الطلب",
+    removeSaved: "حذف من القائمة", removeSavedConfirm: "حذف الطلب من القائمة المحفوظة على هذا الجهاز؟ لن يتم إلغاء الطلب.", savedRemoved: "تم حذف الطلب من القائمة المحفوظة على هذا الجهاز.",
     orderId: "رقم الطلب", phone: "رقم الهاتف المستخدم في الطلب", trackButton: "تتبع الطلب",
     loading: "جاري البحث عن الطلب...", notFound: "رقم الطلب أو رقم الهاتف غير صحيح.",
     unavailable: "تعذر الاتصال بخدمة الطلبات. حاول مرة أخرى لاحقًا.",
@@ -26,6 +30,8 @@ const copy = {
   en: {
     backToShop: "Back to shop", eyebrow: "ORDER SERVICE", title: "Track your order",
     description: "Enter the order number and phone used at checkout to view its status or cancel it before confirmation.",
+    savedOrders: "Orders saved on this device", savedOrder: "Order", savedTotal: "Products subtotal", invoice: "View receipt", trackSaved: "Track order",
+    removeSaved: "Remove from list", removeSavedConfirm: "Remove this order from the saved list on this device? This will not cancel the order.", savedRemoved: "Order removed from the saved list on this device.",
     orderId: "Order number", phone: "Phone used for the order", trackButton: "Track order",
     loading: "Looking up your order...", notFound: "The order number or phone number is incorrect.",
     unavailable: "Order service is unavailable. Please try again later.",
@@ -53,8 +59,44 @@ function setMessage(message, isError = false) {
   messageElement.style.color = isError ? "#9b5145" : "";
 }
 
+function getSavedOrders() {
+  try {
+    const savedOrders = JSON.parse(localStorage.getItem("handmade-orders") || "[]");
+    return Array.isArray(savedOrders) ? savedOrders.filter((order) => order && order.id) : [];
+  } catch (error) {
+    console.warn("Saved orders could not be read.", error);
+    return [];
+  }
+}
+
+function renderSavedOrders() {
+  const savedOrders = getSavedOrders();
+  savedOrdersElement.hidden = savedOrders.length === 0;
+  savedOrdersList.innerHTML = savedOrders.map((order) => {
+    const orderDate = order.created_at || order.createdAt;
+    const date = orderDate ? new Date(orderDate).toLocaleDateString(language === "ar" ? "ar-EG" : "en") : "";
+    return `<article class="saved-order">
+      <div><strong>${text.savedOrder} #${escapeHtml(order.order_number || order.id)}</strong>${date ? `<small>${escapeHtml(date)}</small>` : ""}<small>${text.savedTotal}: ${Number(order.total || 0)} ${language === "ar" ? "جنيه" : "EGP"}</small></div>
+      <div class="saved-order-actions">
+        <a href="invoice.html?id=${encodeURIComponent(order.order_number || order.id)}">${text.invoice}</a>
+        <a href="track-order.html?id=${encodeURIComponent(order.order_number || order.id)}">${text.trackSaved}</a>
+        <button class="saved-order-remove" type="button" data-remove-saved-order="${escapeHtml(order.id)}">${text.removeSaved}</button>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function removeSavedOrder(orderId) {
+  if (!window.confirm(text.removeSavedConfirm)) return;
+  const savedOrders = getSavedOrders().filter((order) => String(order.id) !== String(orderId));
+  localStorage.setItem("handmade-orders", JSON.stringify(savedOrders));
+  renderSavedOrders();
+  setMessage(text.savedRemoved);
+}
+
 function renderOrder(order) {
   const status = order.status || "pending";
+  const orderReference = order.order_number || order.id;
   const items = Array.isArray(order.items) ? order.items : [];
   const itemsMarkup = items.length
     ? items.map((item) => `<div>${escapeHtml(item.name_ar || item.name)} × ${Number(item.quantity || 1)}</div>`).join("")
@@ -62,12 +104,13 @@ function renderOrder(order) {
   const orderDate = order.created_at ? new Date(order.created_at).toLocaleString(language === "ar" ? "ar-EG" : "en") : "—";
   resultElement.innerHTML = `
     <dl>
-      <dt>${text.order}</dt><dd>${escapeHtml(order.id)}</dd>
+      <dt>${text.order}</dt><dd>${escapeHtml(order.order_number || order.id)}</dd>
       <dt>${text.status}</dt><dd class="tracking-status ${escapeHtml(status)}">${text[status] || text.pending}</dd>
       <dt>${text.created}</dt><dd>${escapeHtml(orderDate)}</dd>
       <dt>${text.items}</dt><dd class="tracking-items">${itemsMarkup}</dd>
       <dt>${text.total}</dt><dd>${Number(order.total || 0)} ${language === "ar" ? "جنيه" : "EGP"}</dd>
     </dl>
+    <p><a class="tracking-invoice-link" href="invoice.html?id=${encodeURIComponent(orderReference)}">${text.invoice}</a></p>
     <p class="tracking-message">${status === "pending" ? text.canCancel : text.cannotCancel}</p>
     ${status === "pending" ? `<button class="tracking-cancel" id="cancel-order" type="button">${text.cancel}</button>` : ""}
   `;
@@ -134,5 +177,20 @@ document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
 document.querySelectorAll("[data-i18n]").forEach((element) => {
   element.textContent = text[element.dataset.i18n] || element.textContent;
 });
+orderIdInput.placeholder = "HM-100001";
 orderIdInput.value = new URLSearchParams(window.location.search).get("id") || "";
+renderSavedOrders();
+if (orderIdInput.value) {
+  const savedOrder = getSavedOrders().find((order) =>
+    String(order.id) === orderIdInput.value || String(order.order_number || "").toUpperCase() === orderIdInput.value.toUpperCase(),
+  );
+  if (savedOrder?.phone) {
+    phoneInput.value = savedOrder.phone;
+    findOrder();
+  }
+}
 trackingForm.addEventListener("submit", findOrder);
+savedOrdersList.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-remove-saved-order]");
+  if (removeButton) removeSavedOrder(removeButton.dataset.removeSavedOrder);
+});

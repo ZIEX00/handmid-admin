@@ -30,6 +30,28 @@ create table if not exists public.orders (
 alter table public.orders
   add column if not exists address text;
 
+create sequence if not exists public.order_number_seq start with 100001;
+
+alter table public.orders
+  add column if not exists order_number text;
+
+update public.orders
+set order_number = 'HM-' || nextval('public.order_number_seq')::text
+where order_number is null;
+
+select setval(
+  'public.order_number_seq',
+  greatest(coalesce(max(substring(order_number from '^HM-([0-9]+)$')::bigint), 100000), 100000),
+  true
+)
+from public.orders;
+
+alter table public.orders
+  alter column order_number set default ('HM-' || nextval('public.order_number_seq')::text),
+  alter column order_number set not null;
+
+create unique index if not exists orders_order_number_key on public.orders (order_number);
+
 -- 3) Order items table
 create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),
@@ -237,7 +259,10 @@ create policy "Authenticated users can manage reviews"
 grant insert, select on public.reviews to anon;
 grant select, update, delete on public.reviews to authenticated;
 
-create or replace function public.get_customer_order(p_order_id uuid, p_phone text)
+drop function if exists public.get_customer_order(uuid, text);
+drop function if exists public.get_customer_order(text, text);
+
+create function public.get_customer_order(p_order_id text, p_phone text)
 returns jsonb
 language plpgsql
 stable
@@ -249,7 +274,16 @@ declare
 begin
   select * into matched_order
   from public.orders
-  where id = p_order_id
+  where (
+      order_number = upper(trim(p_order_id))
+      or (
+        case
+          when trim(p_order_id) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+            then id = trim(p_order_id)::uuid
+          else false
+        end
+      )
+    )
     and char_length(regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g')) >= 8
     and regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = regexp_replace(coalesce(p_phone, ''), '[^0-9]', '', 'g');
 
@@ -259,7 +293,10 @@ begin
 
   return jsonb_build_object(
     'id', matched_order.id,
+    'order_number', matched_order.order_number,
     'customer_name', matched_order.customer_name,
+    'phone', matched_order.phone,
+    'address', matched_order.address,
     'items', matched_order.items,
     'total', matched_order.total,
     'status', matched_order.status,
@@ -316,9 +353,9 @@ begin
 end;
 $$;
 
-revoke all on function public.get_customer_order(uuid, text) from public;
+revoke all on function public.get_customer_order(text, text) from public;
 revoke all on function public.cancel_customer_order(uuid, text) from public;
-grant execute on function public.get_customer_order(uuid, text) to anon, authenticated;
+grant execute on function public.get_customer_order(text, text) to anon, authenticated;
 grant execute on function public.cancel_customer_order(uuid, text) to anon, authenticated;
 
 -- Optional: example product seed

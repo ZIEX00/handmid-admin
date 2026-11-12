@@ -55,23 +55,6 @@ function showToast(message, type = "success") {
     window.setTimeout(() => toast.remove(), 250);
   }, 4200);
 }
-function showOrderTrackingToast(orderId) {
-  const container = document.querySelector("#toast-container");
-  if (!container) return;
-  const toast = document.createElement("div");
-  toast.className = "site-toast order-tracking-toast";
-  const message = document.createElement("span");
-  message.textContent = language === "ar" ? `تم استلام طلبك. رقم الطلب: ${orderId}` : `Order received. Order number: ${orderId}`;
-  const link = document.createElement("a");
-  link.href = `track-order.html?id=${encodeURIComponent(orderId)}`;
-  link.textContent = language === "ar" ? "تتبع الطلب أو إلغاؤه" : "Track or cancel order";
-  toast.append(message, link);
-  container.appendChild(toast);
-  window.setTimeout(() => {
-    toast.classList.add("hide");
-    window.setTimeout(() => toast.remove(), 250);
-  }, 15000);
-}
 function getFavoriteIds() {
   try {
     const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]");
@@ -92,15 +75,15 @@ function toggleFavorite(productId) {
 const translations = {
   en: {
     announcement: "Free delivery on orders over EGP 800 <span>•</span> Made by hand in Egypt",
-    home: "Home", shop: "Shop", categories: "Categories", customOrders: "Custom Orders", about: "About", contact: "Contact", trackOrder: "Track Order", contactEyebrow: "LET'S TALK", contactTitle: "A little question? We're here.", contactDescription: "Message us about an order, a custom idea, or anything you'd like to know.", whatsappUs: "Chat with us on WhatsApp",
-    heroEyebrow: "HANDMADE WITH LOVE", heroTitle: "Made by Hand.<br>Made for You.", heroDescription: "Unique crochet pieces, beautiful beadwork and handmade accessories — crafted with care, just for you.", shopCollection: "Shop Collection", shopByCategory: "Shop by Category", viewAll: "View All", featuredProducts: "Featured Products",
-    yourIdea: "Your Idea, Handmade.", customDescription: "Want something special? Choose your colors, size and style — and we’ll create it just for you.", requestOrder: "Request Custom Order", chooseStyle: "Choose Your Style", bracelets: "◌ Bracelets", necklaces: "◌ Necklaces", keychains: "◌ Keychains", crochetItems: "◌ Crochet Items", customerReviews: "What Our Customers Say", viewReviews: "View All Reviews", followUs: "Follow Us @handmade_egypt_1", moreInstagram: "More on Instagram", yourBag: "Your Bag", favorites: "Favorites", emptyFavorites: "You haven't saved any products yet.", removeFavorite: "Remove from favorites", openProduct: "View product", emptyCart: "Your bag is waiting for something special.", total: "Total", checkout: "Checkout", addToBag: "Add to bag", showMoreProducts: "Show remaining products", loading: "Loading handmade pieces...", currency: "EGP", storyEyebrow: "OUR STORY", storyTitle: "Crafted slowly, made to feel personal.", storyDescription: "Each handmade piece begins with an idea, a color palette, and a lot of love. We design crochet, beadwork, and accessories that feel warm, wearable, and unique.", smallBatch: "Small batch", smallBatchDescription: "Thoughtfully made in limited runs.", giftReady: "Gift-ready", giftReadyDescription: "Beautiful packaging for every order.", madeInEgypt: "Made in Egypt", nameLabel: "Name", phoneLabel: "Phone", addressLabel: "Delivery address", checkoutNote: "We will contact you to confirm delivery and payment. Delivery is free on orders over EGP 800.", noteLabel: "Order note", placeOrder: "Place Order", search: "Search", writeReview: "Share your review", sendReview: "Send review",
+    home: "Home", shop: "Shop", categories: "Categories", customOrders: "Custom Orders", about: "About", contact: "Contact", trackOrder: "Track Order", contactEyebrow: "LET'S TALK", contactTitle: "A little question? We're here.", contactDescription: "Questions about a piece or a custom order? Send us a message on WhatsApp and we'll be happy to help.", whatsappUs: "Chat with us on WhatsApp", socialMedia: "Instagram, TikTok and Facebook", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook",
+    heroEyebrow: "HANDMADE WITH LOVE", heroTitle: "Made by Hand.<br>Made for You.", heroDescription: "Unique crochet pieces, beautiful beadwork and handmade accessories — crafted with care, just for you.", shopCollection: "Shop Collection", categoriesEyebrow: "FIND YOUR FAVORITE", shopByCategory: "Shop by Category", viewAll: "View All", featuredProducts: "Featured Products",
+    yourIdea: "Your Idea, Handmade.", customDescription: "Want something special? Choose your colors, size and style — and we’ll create it just for you.", requestOrder: "Request Custom Order", chooseStyle: "Choose Your Style", bracelets: "◌ Bracelets", necklaces: "◌ Necklaces", keychains: "◌ Keychains", crochetItems: "◌ Crochet Items", customerReviews: "What Our Customers Say", viewReviews: "View All Reviews", followUs: "Follow Us @handmade_egypt_1", moreInstagram: "More on Instagram", yourBag: "Your Bag", favorites: "Favorites", emptyFavorites: "You haven't saved any products yet.", removeFavorite: "Remove from favorites", openProduct: "View product", emptyCart: "Your bag is waiting for something special.", total: "Total", productsSubtotal: "Products subtotal", deliveryFeeConfirmation: "Delivery fees depend on your products and address. Our customer service team will confirm the delivery cost with you when confirming your order.", checkout: "Checkout", addToBag: "Add to bag", showMoreProducts: "Show remaining products", loading: "Loading handmade pieces...", currency: "EGP", storyEyebrow: "A LITTLE ABOUT HANDMADE", storyTitle: "Small details, made with heart.", storyDescription: "At HANDMADE, we turn yarn, beads, and a spark of an idea into pieces made to feel like yours. From cozy crochet to colorful beadwork and thoughtful accessories, every piece is made by hand in Egypt — with room to make it your own.", madeByHand: "Made by hand", madeByHandDescription: "Thoughtful crochet, beadwork, and accessories.", customMade: "Made for you", customMadeDescription: "Make your own idea part of the design.", madeInEgypt: "Made in Egypt", nameLabel: "Name", phoneLabel: "Phone", addressLabel: "Delivery address", checkoutNote: "After you place your order, our team will contact you to confirm payment and delivery. Delivery is free on orders over EGP 800.", noteLabel: "Order note", placeOrder: "Place Order", search: "Search", writeReview: "Share your review", sendReview: "Send review",
   },
   ar: {
     announcement: "توصيل مجاني للطلبات أكثر من ٨٠٠ جنيه <span>•</span> مصنوع يدويًا في مصر",
-    home: "الرئيسية", shop: "المتجر", categories: "التصنيفات", customOrders: "طلبات خاصة", about: "عن Handmade", contact: "تواصل معنا", trackOrder: "تتبع طلبك", contactEyebrow: "احكيلنا", contactTitle: "عندك سؤال؟ إحنا موجودين.", contactDescription: "كلمينا عن طلبك، أو فكرتك لتصميم خاص، أو أي حاجة حابة تعرفيها.", whatsappUs: "راسلينا على واتساب",
-    heroEyebrow: "مصنوع بحب", heroTitle: "صُنع يدويًا.<br>صُنع لك.", heroDescription: "قطع كروشيه مميزة، وإكسسوارات من الخرز مصنوعة يدويًا بعناية مخصوص عشانك.", shopCollection: "تسوق المجموعة", shopByCategory: "تسوق حسب التصنيف", viewAll: "عرض الكل", featuredProducts: "منتجات مميزة",
-    yourIdea: "فكرتك، بتنفيذ يدوي.", customDescription: "عايز حاجة مميزة؟ اختار الألوان والمقاس والشكل، وإحنا هننفذها مخصوص ليك.", requestOrder: "اطلب تصميم خاص", chooseStyle: "اختار الشكل", bracelets: "◌ أساور", necklaces: "◌ سلاسل", keychains: "◌ ميداليات", crochetItems: "◌ منتجات كروشيه", customerReviews: "آراء عملائنا", viewReviews: "عرض كل الآراء", followUs: "تابعنا @handmade_egypt_1", moreInstagram: "المزيد على إنستجرام", yourBag: "سلتك", favorites: "المفضلة", emptyFavorites: "لسه ما أضفتش منتجات للمفضلة.", removeFavorite: "إزالة من المفضلة", openProduct: "عرض المنتج", emptyCart: "سلتك مستنية حاجة مميزة.", total: "الإجمالي", checkout: "إتمام الطلب", addToBag: "أضف للسلة", showMoreProducts: "عرض باقي المنتجات", loading: "جاري تحميل المنتجات...", currency: "جنيه", storyEyebrow: "حكايتنا", storyTitle: "مصنوع على مهله، ومخصوص عشانك.", storyDescription: "كل قطعة بتبدأ بفكرة وألوان متناسقة وحب كبير. بنصمم كروشيه ومشغولات خرز وإكسسوارات دافئة ومميزة وسهلة الاستخدام.", smallBatch: "كميات محدودة", smallBatchDescription: "مصنوعة بعناية وبأعداد قليلة.", giftReady: "جاهزة كهدية", giftReadyDescription: "تغليف جميل مع كل طلب.", madeInEgypt: "مصنوع في مصر", nameLabel: "الاسم", phoneLabel: "رقم الهاتف", addressLabel: "عنوان التوصيل", checkoutNote: "هنتواصل معاك لتأكيد تفاصيل التوصيل وطريقة الدفع. التوصيل مجاني للطلبات فوق ٨٠٠ جنيه.", noteLabel: "ملاحظات الطلب", placeOrder: "تأكيد الطلب", search: "بحث", writeReview: "شاركنا رأيك", sendReview: "إرسال الرأي",
+    home: "الرئيسية", shop: "المتجر", categories: "التصنيفات", customOrders: "طلبات خاصة", about: "عن هاند ميد", contact: "تواصل معنا", trackOrder: "تتبع طلبك", contactEyebrow: "احكيلنا", contactTitle: "عندك سؤال؟ إحنا موجودين.", contactDescription: "عندك سؤال عن منتج أو حابة تنفّذي فكرة خاصة؟ كلمينا على واتساب وهنساعدك تختاري التفاصيل المناسبة.", whatsappUs: "راسلينا على واتساب", socialMedia: "حساباتنا على إنستجرام وتيك توك وفيسبوك", instagram: "إنستجرام", tiktok: "تيك توك", facebook: "فيسبوك",
+    heroEyebrow: "مصنوع بحب", heroTitle: "صُنع يدويًا.<br>صُنع لك.", heroDescription: "قطع كروشيه مميزة، وإكسسوارات من الخرز مصنوعة يدويًا بعناية مخصوص عشانك.", shopCollection: "تسوق المجموعة", categoriesEyebrow: "اختار اللي يشبهك", shopByCategory: "تسوق حسب التصنيف", viewAll: "عرض الكل", featuredProducts: "منتجات مميزة",
+    yourIdea: "فكرتك، بتنفيذ يدوي.", customDescription: "عايز حاجة مميزة؟ اختار الألوان والمقاس والشكل، وإحنا هننفذها مخصوص ليك.", requestOrder: "اطلب تصميم خاص", chooseStyle: "اختار الشكل", bracelets: "◌ أساور", necklaces: "◌ سلاسل", keychains: "◌ ميداليات", crochetItems: "◌ منتجات كروشيه", customerReviews: "آراء عملائنا", viewReviews: "عرض كل الآراء", followUs: "تابعنا @handmade_egypt_1", moreInstagram: "المزيد على إنستجرام", yourBag: "سلتك", favorites: "المفضلة", emptyFavorites: "لسه ما أضفتش منتجات للمفضلة.", removeFavorite: "إزالة من المفضلة", openProduct: "عرض المنتج", emptyCart: "سلتك مستنية حاجة مميزة.", total: "الإجمالي", productsSubtotal: "قيمة المنتجات", deliveryFeeConfirmation: "مصاريف التوصيل بتتحدد حسب المنتجات والعنوان، وخدمة العملاء هتأكدها معاك عند تأكيد الطلب.", checkout: "إتمام الطلب", addToBag: "أضف للسلة", showMoreProducts: "عرض باقي المنتجات", loading: "جاري تحميل المنتجات...", currency: "جنيه", storyEyebrow: "عن HANDMADE", storyTitle: "تفاصيل صغيرة، معمولة بحب عشانك.", storyDescription: "في HANDMADE بنحوّل الخيط والخرز وفكرة صغيرة لقطع معمول حسابها تبقى شبهك. من الكروشيه الدافي لمشغولات الخرز والإكسسوارات، كل قطعة بتتعمل بإيد وباهتمام في مصر، ومع الطلبات الخاصة تقدر تختار تفاصيل تناسب ذوقك.", madeByHand: "شغل يدوي", madeByHandDescription: "كروشيه وخرز وإكسسوارات بتفاصيل متقنة.", customMade: "على ذوقك", customMadeDescription: "خلّي فكرتك جزء من تصميم طلبك الخاص.", madeInEgypt: "مصنوع في مصر", nameLabel: "الاسم", phoneLabel: "رقم الهاتف", addressLabel: "عنوان التوصيل", checkoutNote: "بعد تسجيل الطلب، هنتواصل معاك لتأكيد طريقة الدفع ومصاريف التوصيل. التوصيل مجاني للطلبات فوق ٨٠٠ جنيه.", noteLabel: "ملاحظات الطلب", placeOrder: "تأكيد الطلب", search: "بحث", writeReview: "شاركنا رأيك", sendReview: "إرسال الرأي",
   },
 };
 const categories = [
@@ -144,7 +127,7 @@ function renderCategories() {
   document.querySelector("#category-grid").innerHTML = categories
     .map(
       ([name, description, arabicName, arabicDescription, image]) =>
-        `<a class="category-card" href="${name === "Custom Orders" ? "custom-orders.html" : `catalog.html?category=${encodeURIComponent(name)}`}" data-category="${name}" style="background-image:url('${image}')"><div><span><b>${language === "ar" ? arabicName : name}</b><small>${language === "ar" ? arabicDescription : description}</small></span><span>→</span></div></a>`,
+        `<a class="category-card" href="${name === "Custom Orders" ? "custom-orders.html" : `catalog.html?category=${encodeURIComponent(name)}`}" data-category="${name}" style="background-image:url('${image}')"><div class="category-card-content"><span><b>${language === "ar" ? arabicName : name}</b><small>${language === "ar" ? arabicDescription : description}</small></span><span class="category-card-arrow" aria-hidden="true">→</span></div></a>`,
     )
     .join("");
 }
@@ -294,6 +277,10 @@ function applyLanguage() {
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     const value = text[element.dataset.i18n];
     if (value) element.innerHTML = value;
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+    const value = text[element.dataset.i18nAriaLabel];
+    if (value) element.setAttribute("aria-label", value);
   });
   document.querySelector(".language-toggle").textContent = language === "ar" ? "English" : "عربي";
   document.querySelector(".language-toggle").setAttribute("aria-label", language === "ar" ? "التبديل إلى الإنجليزية" : "التبديل إلى العربية");
@@ -652,7 +639,7 @@ document.addEventListener("submit", async (event) => {
     updateCart();
     toggleCart(false);
     event.target.reset();
-    showOrderTrackingToast(order.id);
+    window.location.href = `invoice.html?id=${encodeURIComponent(order.order_number || order.id)}`;
   }
 });
 applyLanguage();

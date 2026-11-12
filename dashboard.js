@@ -339,9 +339,40 @@ function renderCustomRequests() {
         <div>${new Date(request.created_at).toLocaleString('ar-EG')}</div>
       </div>
       ${request.reference_image ? `<img class="custom-request-image" src="${request.reference_image}" alt="الصورة المرجعية للطلب" loading="lazy" />` : '<div class="order-meta">لا توجد صورة مرفقة</div>'}
-      <div class="custom-request-actions"><button class="table-action delete" data-action="delete-custom-request" data-request-id="${request.id}" type="button">حذف الطلب</button></div>
+      <div class="custom-request-actions">
+        <button class="table-action" data-action="create-custom-invoice" data-request-id="${request.id}" type="button">إنشاء فاتورة</button>
+        <button class="table-action delete" data-action="delete-custom-request" data-request-id="${request.id}" type="button">حذف الطلب</button>
+      </div>
     </article>
   `).join('');
+}
+
+function startCustomRequestInvoice(requestId) {
+  const request = customRequests.find((item) => String(item.id) === String(requestId));
+  if (!request) {
+    setAuthMessage('تعذر العثور على الطلب الخاص لإنشاء الفاتورة.', 'error');
+    return;
+  }
+
+  invoiceForm.reset();
+  invoiceItems.replaceChildren();
+  addInvoiceItemRow();
+
+  invoiceForm.elements.customer_name.value = request.name || '';
+  invoiceForm.elements.phone.value = request.phone || '';
+  const itemName = [request.category, request.size].filter(Boolean).join(' - ');
+  invoiceItems.querySelector('.invoice-item-name').value = itemName || 'طلب خاص';
+  invoiceForm.elements.notes.value = [
+    `طلب خاص رقم: ${request.id}`,
+    request.colors && `الألوان: ${request.colors}`,
+    request.deadline && `موعد التسليم: ${request.deadline}`,
+    request.details && `التفاصيل: ${request.details}`,
+  ].filter(Boolean).join('\n');
+
+  updateInvoiceTotal();
+  document.querySelector('#invoice-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  invoiceItems.querySelector('.invoice-item-price').focus({ preventScroll: true });
+  setAuthMessage('أدخل سعر وكمية الطلب الخاص، ثم احفظ الفاتورة.', 'success');
 }
 
 function renderReviews() {
@@ -802,8 +833,10 @@ customRequestsList.addEventListener('change', (event) => {
   }
 });
 customRequestsList.addEventListener('click', (event) => {
-  const action = event.target.closest('[data-action="delete-custom-request"]');
-  if (action) deleteCustomRequest(action.dataset.requestId);
+  const action = event.target.closest('[data-action]');
+  if (!action) return;
+  if (action.dataset.action === 'create-custom-invoice') startCustomRequestInvoice(action.dataset.requestId);
+  if (action.dataset.action === 'delete-custom-request') deleteCustomRequest(action.dataset.requestId);
 });
 reviewsList.addEventListener('click', (event) => {
   const action = event.target.closest('[data-action]');
